@@ -1,0 +1,24 @@
+/* The three result columns and the cost breakdown under each total. */
+.cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.col { min-width: 0; border-top: 4px solid var(--c); padding-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.col.lease { --c: var(--lease); }
+.col.loan { --c: var(--loan); }
+.col.cash { --c: var(--cash); }
+.col h3 { margin: 0; font-size: 1.05rem; color: var(--c); }
+.col .desc { font-size: 0.82rem; color: var(--muted); margin: 0; min-height: 3em; }
+.derived { font-size: 0.85rem; display: flex; justify-content: space-between; gap: 8px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.derived b { font-family: var(--font-num); font-weight: 500; white-space: nowrap; }
+.common .derived { align-self: center; }
+
+.lbl { font-size: 0.8rem; color: var(--muted); }
+.lbl.best { color: var(--c); font-weight: 600; }
+.big { font-family: var(--font-num); font-size: 1.7rem; font-weight: 500; line-height: 1.2; overflow-wrap: anywhere; color: var(--c); }
+.split { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; margin: 0; font-size: 0.82rem; color: var(--muted); }
+.split dt { min-width: 0; }
+.split dd { margin: 0; font-family: var(--font-num); text-align: right; white-space: nowrap; }
+.note { margin-top: 14px; }
+.note div { margin-bottom: 4px; }
+
+@media (max-width: 760px) {
+  .cols { grid-template-columns: 1fr; }
+}

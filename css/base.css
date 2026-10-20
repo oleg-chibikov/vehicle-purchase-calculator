@@ -1,0 +1,33 @@
+/* Layout: the car inputs, then the result in three columns (lease, loan, cash), then the working and the sources folded away. */
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f3f5f7, #0f161d);
+  --surface: light-dark(#ffffff, #17212b);
+  --fg: light-dark(#16202a, #e6ebf0);
+  --muted: light-dark(#5a6673, #98a5b2);
+  --line: light-dark(#d9dfe5, #2b3946);
+  --lease: light-dark(#0f7a5c, #4fd1a5);
+  --loan: light-dark(#2f5d8a, #7fb0e0);
+  --cash: light-dark(#8a5a14, #e0b25f);
+  --warn: light-dark(#a4531a, #f0a266);
+  --warn-soft: light-dark(#fbece0, #3a2616);
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1 { font-size: 1.5rem; line-height: 1.2; margin: 0; text-wrap: balance; }
+h2 { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
+h3.group { font-size: 0.8rem; color: var(--muted); font-weight: 600; margin: 16px 0 8px; }
+h3.sec { font-size: 0.95rem; margin: 24px 0 8px; }
+p { margin: 0 0 8px; }
+.sub { color: var(--muted); margin: 4px 0 0; max-width: 68ch; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }

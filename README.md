@@ -20,6 +20,24 @@ The page has one screen of content, in this order:
 
 Open `index.html` in a browser. There is no build step and no dependencies.
 
+The code sits next to the page, one file per job. The page loads the scripts in this order, because each one uses names from the files before it:
+
+| File | What it does |
+| --- | --- |
+| `js/format.js` | Formats money, percent and dates |
+| `js/rules.js` | Tax rates, FBT rules, car types and other fixed numbers |
+| `js/sources.js` | The source of every fixed number |
+| `js/fbt.js` | Picks the FBT rate for the car and the start date |
+| `js/calc.js` | Tax, payments, the account balance and the total cost of each option |
+| `js/duty.js` | Stamp duty for each state |
+| `js/info.js` | The **i** icons, their tooltips and the sources table |
+| `js/inputs.js` | Reads the fields and sets them back to their defaults |
+| `js/render.js` | Draws the results and the working |
+| `js/storage.js` | Keeps the changed fields in `localStorage` |
+| `js/main.js` | Wires up the page and draws it the first time |
+
+The styles sit in `css/`: `base.css` for colors and type, then `form.css`, `results.css`, `tables.css` and `tooltip.css`. The scripts are plain scripts with no modules, so the page still opens straight from disk.
+
 The browser keeps the fields you changed in `localStorage`, so a reload shows them again. A start date you left alone stays today. "Reset to defaults" next to "Your car" clears them.
 
 Every step of the calculation is under "How it is worked out": income tax by tier, cash left per year, the balance year by year, FBT, stamp duty and the lease payment formula.
@@ -28,7 +46,7 @@ Every fixed number has a source. An **i** icon next to it opens a tooltip with t
 
 The **i** next to each cost line shows its formula with your numbers in cents, then the sources it uses.
 
-In the code, the constants sit at the top of the script and each names its `SOURCES` entry in a comment. Every text that mentions a number is built from its constant, so a rule changes in one place. Each state's stamp duty rates sit once in the `DUTY` table, and both the formula and its description read them.
+In the code, the constants sit in `js/rules.js` and each names its `SOURCES` entry in a comment. Every text that mentions a number is built from its constant, so a rule changes in one place. Each state's stamp duty rates sit once in the `DUTY` table, and both the formula and its description read them.
 
 ## Running costs
 

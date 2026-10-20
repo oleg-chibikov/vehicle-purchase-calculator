@@ -1,0 +1,20 @@
+/* The working: tables, formulas, warnings and notes. */
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 560px; }
+th, td { padding: 7px 6px; text-align: right; border-bottom: 1px solid var(--line); font-size: 0.88rem; vertical-align: top; }
+th:first-child, td:first-child { text-align: left; width: 34%; }
+table.src td, table.src th { text-align: left; width: auto; }
+table.src td:first-child { width: 18%; }
+table.src td:last-child { width: 26%; }
+th { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+th.lease { color: var(--lease); } th.loan { color: var(--loan); } th.cash { color: var(--cash); }
+td.n { font-family: var(--font-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td small { display: block; color: var(--muted); font-size: 0.72rem; font-family: var(--font-body); }
+tr.total td { font-weight: 600; border-bottom: 2px solid var(--fg); }
+tr.sub td { color: var(--muted); font-size: 0.82rem; }
+tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; background: var(--bg); }
+.formula { font-family: var(--font-num); font-size: 0.82rem; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; overflow-x: auto; white-space: pre-wrap; }
+.flag { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 10px 12px; font-size: 0.85rem; }
+.flag[hidden] { display: none; }
+ul.notes { color: var(--muted); font-size: 0.85rem; max-width: 76ch; margin: 0; padding-left: 18px; }
+ul.notes li { margin-bottom: 4px; }
