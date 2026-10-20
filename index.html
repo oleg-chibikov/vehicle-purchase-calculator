@@ -54,6 +54,11 @@ summary::-webkit-details-marker { display: none; }
 summary::before { content: "\25B8"; color: var(--muted); transition: transform 0.15s; }
 details[open] > summary::before { transform: rotate(90deg); }
 summary h2 { margin: 0; }
+.cardhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.cardhead h2 { margin: 0; }
+.reset { font: inherit; font-size: 0.82rem; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+.reset:hover { color: var(--fg); border-color: var(--muted); }
+.reset:focus-visible { outline: 2px solid var(--lease); outline-offset: 1px; }
 details.fold[open] > summary { margin-bottom: 4px; }
 details.more { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
 details.more > summary { font-size: 0.88rem; color: var(--muted); }
@@ -124,7 +129,7 @@ ul.notes li { margin-bottom: 4px; }
   <div class="flag" id="flag" hidden></div>
 
   <section class="card">
-    <h2>Your car</h2>
+    <div class="cardhead"><h2>Your car</h2><button type="button" id="reset" class="reset">Reset to defaults</button></div>
     <div class="common">
       <div class="field"><label for="salary">Gross salary per year<small>Excluding super</small></label><input id="salary" type="number" inputmode="decimal" step="1000" value="200000"></div>
       <div class="field"><label for="price">Car price<small>With GST and dealer delivery, before stamp duty and rego</small></label><input id="price" type="number" inputmode="decimal" step="500" value="50000"></div>
@@ -879,14 +884,55 @@ function fillStaticSources() {
 
 // Picking a car type or a term fills in its default fuel cost or the ATO minimum balloon.
 function onInput(e) {
-  if (e.target.id === 'carType') $('charging').value = CAR_TYPES[e.target.value].fuel;
-  if (e.target.id === 'years') $('balloonPct').value = RESIDUAL[parseInt(e.target.value, 10)];
+  if (FIELDS.indexOf(e.target) < 0) return;
+  var changed = [e.target.id];
+  if (e.target.id === 'carType') { $('charging').value = CAR_TYPES[e.target.value].fuel; changed.push('charging'); }
+  if (e.target.id === 'years') { $('balloonPct').value = RESIDUAL[parseInt(e.target.value, 10)]; changed.push('balloonPct'); }
+  save(changed);
   render();
 }
+
+// localStorage keeps only the fields the person changed. An untouched start date stays today on the next visit.
+var STORE_KEY = 'vehicle-purchase-calculator.inputs';
+var saved = loadSaved();
+function loadSaved() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) { return {}; }
+}
+function writeSaved() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(saved)); } catch (e) { /* Storage is off. The values last until the page closes. */ }
+}
+function save(ids) {
+  ids.forEach(function (id) { var el = $(id); saved[id] = el.type === 'checkbox' ? el.checked : el.value; });
+  writeSaved();
+}
+function restoreSaved() {
+  FIELDS.forEach(function (el) {
+    if (!(el.id in saved)) return;
+    var v = saved[el.id];
+    if (el.type === 'checkbox') el.checked = v === true;
+    else if (el.tagName !== 'SELECT' || Array.prototype.some.call(el.options, function (o) { return o.value === v; })) el.value = v;
+  });
+}
+function setDefaults() {
+  FIELDS.forEach(function (el) {
+    if (el.type === 'checkbox') el.checked = el.defaultChecked;
+    else if (el.tagName === 'SELECT') Array.prototype.forEach.call(el.options, function (o) { o.selected = o.defaultSelected; });
+    else el.value = el.defaultValue;
+  });
+  $('startDate').value = today();
+  $('charging').value = CAR_TYPES[$('carType').value].fuel;
+}
+$('reset').addEventListener('click', function () {
+  saved = {};
+  try { localStorage.removeItem(STORE_KEY); } catch (e) { /* Storage is off. The page has no saved values to clear. */ }
+  setDefaults();
+  render();
+});
+
 document.addEventListener('input', onInput);
 document.addEventListener('change', onInput);
-$('startDate').value = today();
-$('charging').value = CAR_TYPES[$('carType').value].fuel;
+setDefaults();
+restoreSaved();
 fillStaticSources();
 render();
 </script>

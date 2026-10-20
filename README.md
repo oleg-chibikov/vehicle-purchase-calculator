@@ -20,6 +20,8 @@ The page has one screen of content, in this order:
 
 Open `index.html` in a browser. There is no build step and no dependencies.
 
+The browser keeps the fields you changed in `localStorage`, so a reload shows them again. A start date you left alone stays today. "Reset to defaults" next to "Your car" clears them.
+
 Every step of the calculation is under "How it is worked out": income tax by tier, cash left per year, the balance year by year, FBT, stamp duty and the lease payment formula.
 
 Every fixed number has a source. An **i** icon next to it opens a tooltip with the value, a link to the official page, and the date it was checked. The section "Sources for every number" at the bottom of the page lists all of them. A number with no source is marked as an assumption.
