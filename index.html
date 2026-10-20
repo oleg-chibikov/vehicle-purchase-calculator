@@ -68,6 +68,13 @@ input:focus-visible, select:focus-visible { outline: 2px solid var(--lease); out
 .badge { display: inline-block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; background: var(--c); color: var(--surface); width: fit-content; }
 .badge[hidden] { display: none; }
 
+.tiers { margin-top: 8px; border-top: 1px solid var(--line); }
+.tier { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 0.85rem; }
+.tier span { min-width: 0; }
+.tier small { display: block; color: var(--muted); font-size: 0.72rem; }
+.tier b { font-family: var(--font-num); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tier.sum { font-weight: 600; border-bottom: 2px solid var(--fg); }
+.tier.sum b { font-weight: 600; }
 .scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; min-width: 560px; }
 th, td { padding: 7px 6px; text-align: right; border-bottom: 1px solid var(--line); font-size: 0.88rem; vertical-align: top; }
@@ -143,6 +150,16 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
       <div class="col cash res"><span class="badge" id="bCash" hidden>Highest</span><div class="big" id="rCash"></div><div class="lbl" id="sCash"></div></div>
     </div>
     <p class="lbl" style="margin-top:12px">In all three cases you own the car at the end. Car resale value is not included.</p>
+  </section>
+
+  <section class="card" aria-live="polite">
+    <h2>Income tax paid over the term</h2>
+    <p class="lbl" id="taxIntro"></p>
+    <div class="cols">
+      <div class="col lease res"><div class="big" id="xLease"></div><div class="lbl" id="xsLease"></div><div class="tiers" id="tLease"></div></div>
+      <div class="col loan res"><div class="big" id="xLoan"></div><div class="lbl" id="xsLoan"></div><div class="tiers" id="tLoan"></div></div>
+      <div class="col cash res"><div class="big" id="xCash"></div><div class="lbl" id="xsCash"></div><div class="tiers" id="tCash"></div></div>
+    </div>
   </section>
 
   <section class="card" aria-live="polite">
@@ -315,6 +332,25 @@ function render() {
     $('b' + k).hidden = !(ends[k] >= best - 0.5);
     var gap = ends[k] - best;
     $('s' + k).textContent = gap >= -0.5 ? 'Best of the three' : usd(gap) + ' compared with the highest';
+  });
+
+  var yrs = i.years;
+  var taxOf = { Lease: r.leaseTax, Loan: r.loanTax, Cash: r.cashTax };
+  var lowestTax = Math.min(r.leaseTax.total, r.loanTax.total, r.cashTax.total) * yrs;
+  $('taxIntro').textContent = 'Each yearly figure multiplied by ' + yrs + ' years. Salary is flat, so every year is taxed the same.';
+  ['Lease', 'Loan', 'Cash'].forEach(function (k) {
+    var t = taxOf[k], total = t.total * yrs;
+    $('x' + k).textContent = usd(total);
+    var extra = total <= lowestTax + 0.5 ? 'Lowest tax' : '+' + usd(total - lowestTax) + ' compared with the lowest';
+    $('xs' + k).textContent = pct(total / (i.salary * yrs)) + ' of gross pay. ' + extra;
+    var h = '';
+    t.rows.forEach(function (b) {
+      var lab = b.to === Infinity ? usd(b.from + 1) + ' and over' : usd(b.from === 0 ? 0 : b.from + 1) + ' to ' + usd(b.to);
+      h += '<div class="tier"><span>' + pct(b.rate) + ' tier<small>' + lab + ': ' + usd(b.inBand * yrs) + ' taxed</small></span><b>' + usd(b.tax * yrs) + '</b></div>';
+    });
+    h += '<div class="tier"><span>Medicare levy 2%<small>On ' + usd(t.taxable * yrs) + ' taxable income</small></span><b>' + usd(t.medicare * yrs) + '</b></div>';
+    h += '<div class="tier sum"><span>Total tax</span><b>' + usd(total) + '</b></div>';
+    $('t' + k).innerHTML = h;
   });
 
   var costs = { Lease: r.leaseCost, Loan: r.loanCost, Cash: r.cashCost };
