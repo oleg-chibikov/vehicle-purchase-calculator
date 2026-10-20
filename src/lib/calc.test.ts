@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { calc } from './calc';
 import { defaultValues, readInputs, type FormValues } from './inputs';
+import { CAR_TYPES } from './rules';
 
 // The start date is fixed, because the electric car FBT rules change by date.
 function costs(changes: Partial<FormValues> = {}) {
@@ -34,6 +35,16 @@ describe('calc', () => {
 
   it('works out NSW stamp duty on a $50,000 car', () => {
     expect(calc(readInputs(defaultValues())).duty).toBe(1600);
+  });
+
+  it('claims GST only on the petrol share of the fuel budget', () => {
+    const running = (carType: FormValues['carType'], charging: string) =>
+      calc(readInputs({ ...defaultValues(), startDate: '2026-10-20', carType, charging })).leaseRunningYear;
+    const base = 1000 + 2400 / 1.1;
+    expect(running('ev', '1100')).toBeCloseTo(base + 1100, 6);
+    expect(running('ice', '1100')).toBeCloseTo(base + 1000, 6);
+    const petrolShare = CAR_TYPES.phev.fuelGstShare;
+    expect(running('phev', '1100')).toBeCloseTo(base + 1100 - 1100 * petrolShare / 11, 6);
   });
 
   it('splits each cost into parts that add up to it, plus the interest the account missed', () => {

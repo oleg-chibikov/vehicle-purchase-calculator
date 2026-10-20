@@ -64,7 +64,7 @@ export const SOURCES = {
   oneThird: { name: 'Base value after 4 years', value: 'The base value drops by a third once the car has been held for 4 years. Not used in the calculation', note: 'Rule from memory, not checked against a source.' },
   assumeRates: { name: 'Interest rates', value: 'Lease ' + DEFAULTS.leaseRate + '%, loan ' + DEFAULTS.loanRate + '%, account ' + DEFAULTS.accountRate + '% are examples. Use the rates on your own quote and account' },
   assumeFuel: { name: 'Fuel and charging cost', value: Object.values(CAR_TYPES).map((c) => c.name + ': ' + c.calc + ', rounded to ' + usd(c.fuel)).join('. ') },
-  assumeFuelGst: { name: 'GST on fuel through the lease', value: 'Home charging is reimbursed with no GST credit. Fuel for a plug-in hybrid or petrol car is bought on a fuel card, so the GST is claimed back' },
+  assumeFuelGst: { name: 'GST on fuel through the lease', value: 'Home charging is reimbursed with no GST credit. Petrol is bought on a fuel card, so its GST is claimed back. A plug-in hybrid claims GST only on the petrol share of its fuel cost' },
   assumeDutyType: { name: 'Duty category by car type', value: 'ACT: electric AAA, plug-in hybrid AA, petrol B. QLD petrol: 4 cylinders. VIC: electric and plug-in hybrid count as green cars, petrol does not' }
 } satisfies Record<string, Source>;
 

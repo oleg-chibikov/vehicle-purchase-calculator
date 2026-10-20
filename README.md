@@ -82,7 +82,7 @@ In the code, the constants sit in `src/lib/rules.ts` and each names its `SOURCES
 
 Rego and CTP, insurance, servicing and tyres, and charging are included in all three options, because the car costs the same to run however it is paid for. What differs is how they are paid:
 
-- **Novated lease.** Paid through the lease before tax. GST is recovered on insurance, servicing and fuel bought on a fuel card, so those cost one eleventh less. Rego and CTP carry no GST. Home charging of an electric car is reimbursed with no GST saving. A checkbox moves fuel or charging out of the lease.
+- **Novated lease.** Paid through the lease before tax. GST is recovered on insurance, servicing and fuel bought on a fuel card, so those cost one eleventh less. Rego and CTP carry no GST. Home charging is reimbursed with no GST saving, so a plug-in hybrid claims GST only on the petrol share of its fuel cost. A checkbox moves fuel or charging out of the lease.
 - **Car loan and cash.** Paid from take-home pay, GST included.
 
 Costs are flat per year with no inflation. Rego and CTP for the first year are counted here, not in the price. Super, car resale value and early termination fees are left out on purpose. Provider fees can be entered as an input and default to $0.

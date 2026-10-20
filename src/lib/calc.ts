@@ -3,7 +3,7 @@ import { stampDuty } from './duty';
 import { fbtStatus } from './fbt';
 import type { Inputs } from './inputs';
 import {
-  CAR_LIMIT, FBT_RATE, GROSS_UP_TYPE1, GROSS_UP_TYPE2, GST, MEDICARE, REPORTABLE_OVER, STATUTORY_RATE, TIERS, type Tier
+  CAR_LIMIT, CAR_TYPES, FBT_RATE, GROSS_UP_TYPE1, GROSS_UP_TYPE2, GST, MEDICARE, REPORTABLE_OVER, STATUTORY_RATE, TIERS, type Tier
 } from './rules';
 
 export type Option = 'lease' | 'loan' | 'cash';
@@ -28,10 +28,11 @@ export function calc(i: Inputs) {
   const residual = financed * i.balloonPct / 100;
   const balloon = residual * (1 + GST);
   const leaseMonthly = pmt(i.leaseRate / 1200, n, financed, residual);
-  // Running costs paid through the lease: GST is recovered on insurance, servicing and bought fuel.
-  // Home charging of an electric car is reimbursed with no GST saving.
+  // Running costs paid through the lease: GST is recovered on insurance, servicing and fuel bought on a card.
+  // Home charging is reimbursed with no GST saving, so only the petrol share of the fuel budget drops.
   const runningFull = i.rego + i.insurance + i.service + i.charging;
-  const fuelPre = i.carType === 'ev' ? i.charging : i.charging / (1 + GST);
+  const fuelWithGst = i.charging * CAR_TYPES[i.carType].fuelGstShare;
+  const fuelPre = i.charging - fuelWithGst + fuelWithGst / (1 + GST);
   const leaseRunningPre = i.rego + (i.insurance + i.service) / (1 + GST) + (i.chargingInLease ? fuelPre : 0);
   const leaseRunningPost = i.chargingInLease ? 0 : i.charging;
   const packageYear = leaseMonthly * 12 + i.fee + leaseRunningPre;

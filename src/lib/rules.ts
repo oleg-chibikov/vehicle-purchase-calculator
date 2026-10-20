@@ -44,6 +44,8 @@ export interface CarTypeInfo {
   litres: number;
   // The yearly fuel or charging cost, rounded to $5, and how it is worked out.
   fuel: number;
+  // The share of that cost spent on fuel with GST in it. Home charging carries no GST credit. SOURCES.assumeFuelGst
+  fuelGstShare: number;
   calc: string;
   hint: string;
 }
@@ -58,9 +60,15 @@ function carType(name: string, electric: number, kWh: number, litres: number): C
   const parts = [];
   if (electric > 0) parts.push(km(electric) + ' at ' + kWh + ' kWh per 100 km and ' + usd(KWH_PRICE, true) + ' per kWh');
   if (electric < 1) parts.push(km(1 - electric) + ' at ' + litres + ' L per 100 km and ' + usd(LITRE_PRICE, true) + ' per litre');
-  const cost = FUEL_KM * (electric * kWh / 100 * KWH_PRICE + (1 - electric) * litres / 100 * LITRE_PRICE);
+  const chargeCost = electric * kWh / 100 * KWH_PRICE;
+  const fuelCost = (1 - electric) * litres / 100 * LITRE_PRICE;
+  const cost = FUEL_KM * (chargeCost + fuelCost);
   const calc = parts.join(' plus ');
-  return { name, electric, kWh, litres, fuel: Math.round(cost / 5) * 5, calc, hint: calc + '. Rounded to $5. Example only' };
+  return {
+    name, electric, kWh, litres, fuel: Math.round(cost / 5) * 5,
+    fuelGstShare: cost > 0 ? fuelCost / (chargeCost + fuelCost) : 0,
+    calc, hint: calc + '. Rounded to $5. Example only'
+  };
 }
 
 function km(share: number): string {
