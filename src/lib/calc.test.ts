@@ -68,6 +68,16 @@ describe('calc', () => {
     expect(running('phev', '1100')).toBeCloseTo(base + 1100 - 1100 * petrolShare / 11, 6);
   });
 
+  it('takes each monthly car payment off what a bank would lend at the rate plus the buffer', () => {
+    const r = calc(readInputs({ ...defaultValues(), startDate: '2026-10-20' }));
+    // 6% + 3% over 30 years is $804.62 a month for every $100,000.
+    expect(r.homeMonthlyPer1 * 100000).toBeCloseTo(804.62, 2);
+    expect(r.borrowLess.loan[0]).toBeCloseTo(r.loanMonthly / r.homeMonthlyPer1, 6);
+    expect(r.borrowMonthly.lease[0]).toBeCloseTo((r.takeHome - r.leaseTakeHome) / 12, 6);
+    expect(r.borrowMonthly.lease[1]).toBeCloseTo(r.leasePretaxYear / 12, 6);
+    expect(r.borrowLess.cash).toEqual([0]);
+  });
+
   it('splits each cost into parts that add up to it, plus the interest the account missed', () => {
     const r = calc(readInputs({ ...defaultValues(), startDate: '2026-10-20', accountRate: '0' }));
     for (const k of ['lease', 'loan', 'cash'] as const) {

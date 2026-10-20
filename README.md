@@ -15,6 +15,8 @@ The page has one screen of content, in this order:
    - GST and income tax the lease saves, and FBT when it applies
    - interest the account missed, which is the rest. It is what the money spent on the car would have earned in the account. At 0% account interest this line is gone.
 
+   Under the account, each column shows how much less a bank would lend for a home while the car is paid off. See "Borrowing for another home".
+
    The lease column folds its own settings (rate, balloon, fees, fuel through the lease, no FBT exemption). The loan column folds its rate.
 3. **How it is worked out** and **Sources for every number**, folded until you open them.
 
@@ -98,6 +100,16 @@ The balance earns interest every month at the account rate (default 6%), in all 
 
 This makes the comparison fair: the loan pays interest, and the cash purchase loses the interest the money would have earned.
 
+## Borrowing for another home
+
+A rough guide to how much less a bank would lend for a home while the car is being paid off. A bank takes each monthly payment off the pay, then tests a new mortgage at its rate plus the [APRA buffer](https://www.apra.gov.au/news-and-publications/apra-keeps-macroprudential-policy-settings-steady) of 3 percentage points over 30 years. At the default 6%, that is $804.62 a month for every $100,000. Less to borrow = monthly payment / that amount x $100,000.
+
+- **Car loan.** The repayment counts. With the defaults, $1,071 a month is about $133,000 less.
+- **Novated lease.** Banks count it in one of two ways, so the page shows a range. The payslip as it is: take-home pay drops by $598 a month, about $74,000 less. The salary sacrifice added back and the whole lease taken off: $1,089 a month, about $135,000 less. That payment holds the running costs, which the bank may count a second time with living costs.
+- **Cash.** No payment, so the pay the bank sees stays the same. The account holds the price and stamp duty less. With a 20% deposit, every $1 less of deposit is $5 less of home price.
+
+The effect lasts for the term. The lease balloon is due at the end. Running costs for the loan and cash stay out, because the bank already counts living costs. Ask a broker how your bank works.
+
 ## Car type and fringe benefits tax
 
 The car type only changes the novated lease, through fringe benefits tax (FBT), plus stamp duty in some states and the default fuel cost. The loan and cash columns pay no FBT.
@@ -161,7 +173,7 @@ These are the inputs a novated lease quote is built from:
 
 The monthly payment is not an input. It is calculated from the rate, term and balloon. If a provider gives you a monthly payment instead, adjust the interest rate until the payment on the page matches.
 
-Other inputs, folded next to the part of the page they change: gross salary (excluding super), a yearly bonus or shares before tax and whether the shares are kept, a loan interest rate for the comparison (default 9%, an estimate, not market data), the cash in the account today, the account type, the mortgage owing for an offset, the account interest rate, the four yearly running costs, and a checkbox that models the lease without the FBT exemption.
+Other inputs, folded next to the part of the page they change: gross salary (excluding super), a yearly bonus or shares before tax and whether the shares are kept, a loan interest rate for the comparison (default 9%, an estimate, not market data), the cash in the account today, the account type, the mortgage owing for an offset, the account interest rate, the four yearly running costs, the rate on a new home loan (default 6%), and a checkbox that models the lease without the FBT exemption.
 
 ## Tax used: 2026-27 resident rates
 

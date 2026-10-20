@@ -3,8 +3,8 @@ import { DUTY } from './duty';
 import { dayBefore, longDate, pct, usd } from './format';
 import { DEFAULTS, type State } from './inputs';
 import {
-  CAR_LIMIT, CAR_TYPES, EV_ANNOUNCED, EV_DISCOUNT_RATE, EV_FIRST_USE, EV_FULL_CAP, EV_PHASE2, EV_PHASE3, FBT_RATE, GROSS_UP_TYPE1,
-  GROSS_UP_TYPE2, GST, LCT_FUEL_EFFICIENT, MEDICARE, PHEV_CUTOFF, REPORTABLE_OVER, RESIDUAL, RULES_CHECKED, STATUTORY_RATE, TAX_YEAR,
+  APRA_BUFFER, CAR_LIMIT, CAR_TYPES, EV_ANNOUNCED, EV_DISCOUNT_RATE, EV_FIRST_USE, EV_FULL_CAP, EV_PHASE2, EV_PHASE3, FBT_RATE, GROSS_UP_TYPE1,
+  GROSS_UP_TYPE2, GST, HOME_DEPOSIT, HOME_LOAN_YEARS, LCT_FUEL_EFFICIENT, MEDICARE, PHEV_CUTOFF, REPORTABLE_OVER, RESIDUAL, RULES_CHECKED, STATUTORY_RATE, TAX_YEAR,
   TIERS, type CarType
 } from './rules';
 
@@ -67,6 +67,10 @@ export const SOURCES = {
   assumeRates: { name: 'Interest rates', value: 'Lease ' + DEFAULTS.leaseRate + '%, loan ' + DEFAULTS.loanRate + '%, account ' + DEFAULTS.accountRate + '% are examples. Use the rates on your own quote and account' },
   assumeFuel: { name: 'Fuel and charging cost', value: Object.values(CAR_TYPES).map((c) => c.name + ': ' + c.calc + ', rounded to ' + usd(c.fuel)).join('. ') },
   assumeFuelGst: { name: 'GST on fuel through the lease', value: 'Home charging is reimbursed with no GST credit. Petrol is bought on a fuel card, so its GST is claimed back. A plug-in hybrid claims GST only on the petrol share of its fuel cost' },
+  buffer: { name: 'Mortgage serviceability buffer', value: 'A bank tests a new mortgage at its rate plus ' + APRA_BUFFER * 100 + ' percentage points',
+    links: [['APRA keeps macroprudential policy settings steady', 'https://www.apra.gov.au/news-and-publications/apra-keeps-macroprudential-policy-settings-steady'],
+      ['APRA maintains current macroprudential policy settings', 'https://www.apra.gov.au/news-and-publications/apra-maintains-current-macroprudential-policy-settings-highly-uncertain']] },
+  assumeLender: { name: 'How a bank counts the car', value: 'A rough guide. The bank takes each monthly payment off the pay and lends what is left over ' + HOME_LOAN_YEARS + ' years. A novated lease is counted in one of two ways, depending on the bank: the payslip as it is, or the salary sacrifice added back to the income and the whole lease payment taken off. Running costs are left out for the loan and cash, because the bank already counts living costs. The deposit example uses a ' + pct(HOME_DEPOSIT) + ' deposit. Ask a broker how your bank works' },
   assumeDutyType: { name: 'Duty category by car type', value: 'ACT: electric AAA, plug-in hybrid AA, petrol B. QLD petrol: 4 cylinders. VIC: electric and plug-in hybrid count as green cars, petrol does not' }
 } satisfies Record<string, Source>;
 

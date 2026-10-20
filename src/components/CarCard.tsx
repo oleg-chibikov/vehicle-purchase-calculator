@@ -53,6 +53,12 @@ export function CarCard({ i, r, onReset }: CarCardProps) {
             <NumberField id="accountRate" label="Account interest, % p.a." hint="Mortgage rate for an offset" src={['assumeRates']} step={0.05} />
           </div>
         </details>
+        <details className="more">
+          <summary>Borrowing for another home</summary>
+          <div className="common">
+            <NumberField id="homeRate" label="New mortgage rate, % p.a." hint="The bank tests it with the buffer on top" src={['buffer', 'assumeLender']} step={0.05} />
+          </div>
+        </details>
       </div>
     </section>
   );

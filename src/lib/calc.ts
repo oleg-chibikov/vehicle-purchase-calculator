@@ -3,7 +3,7 @@ import { stampDuty } from './duty';
 import { fbtStatus } from './fbt';
 import type { Inputs } from './inputs';
 import {
-  CAR_LIMIT, CAR_TYPES, FBT_RATE, GROSS_UP_TYPE1, GROSS_UP_TYPE2, GST, MEDICARE, REPORTABLE_OVER, STATUTORY_RATE, TIERS, type Tier
+  APRA_BUFFER, CAR_LIMIT, CAR_TYPES, FBT_RATE, GROSS_UP_TYPE1, GROSS_UP_TYPE2, GST, HOME_LOAN_YEARS, MEDICARE, REPORTABLE_OVER, STATUTORY_RATE, TIERS, type Tier
 } from './rules';
 
 export type Option = 'lease' | 'loan' | 'cash';
@@ -83,6 +83,18 @@ export function calc(i: Inputs) {
   // Baseline: same pay, same tax, same account, no car at all.
   const noCar = simulate(i, i.start, noCarYearCash, lump, income, 0);
 
+  // Borrowing for a home: the bank takes each monthly payment off the pay and tests a new mortgage at its rate plus the buffer.
+  // A bank reads a novated lease off the payslip, or adds the sacrifice back to the income and takes off the whole payment.
+  const homeMonthlyPer1 = pmt((i.homeRate / 100 + APRA_BUFFER) / 12, HOME_LOAN_YEARS * 12, 1);
+  const borrowMonthly: Record<Option, number[]> = {
+    lease: [(takeHome - leaseTakeHome + ecm) / 12, (leasePretaxYear + ecm) / 12],
+    loan: [loanMonthly],
+    cash: [0]
+  };
+  const borrowLess = Object.fromEntries(
+    Object.entries(borrowMonthly).map(([k, m]) => [k, m.map((x) => x / homeMonthlyPer1)])
+  ) as Record<Option, number[]>;
+
   const running = runningFull * i.years;
   const gstSaved = gstCredit - residual * GST + (runningFull - leaseRunningPre - leaseRunningPost - ecmGst) * i.years;
   const parts: Record<Option, Parts> = {
@@ -108,7 +120,8 @@ export function calc(i: Inputs) {
       cash: upfront + runningFull * i.years
     } as Record<Option, number>,
     runningFull, leaseRunningPost, leaseRunningYear: leaseRunningPre + leaseRunningPost,
-    fbt, statutory, reportableValue, ecm, ecmGst, fbtTax, rfba, packageYear
+    fbt, statutory, reportableValue, ecm, ecmGst, fbtTax, rfba, packageYear,
+    homeMonthlyPer1, borrowMonthly, borrowLess
   };
 }
 

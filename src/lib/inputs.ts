@@ -30,6 +30,7 @@ export interface Inputs {
   chargingInLease: boolean;
   noExemption: boolean;
   loanRate: number;
+  homeRate: number;
 }
 
 // The form holds text as typed, so a half-typed number stays on screen. Checkboxes hold booleans.
@@ -56,7 +57,8 @@ export const DEFAULTS: Omit<FormValues, 'startDate' | 'charging'> = {
   fee: '0',
   chargingInLease: true,
   noExemption: false,
-  loanRate: '9'
+  loanRate: '9',
+  homeRate: '6'
 };
 
 // The start date defaults to today and the fuel cost to the default car type, so both are worked out on each visit.
@@ -84,6 +86,6 @@ export function readInputs(v: FormValues): Inputs {
     rego: n(v.rego), insurance: n(v.insurance), service: n(v.service), charging: n(v.charging),
     start: n(v.start), account: v.account as Account, mortgage: n(v.mortgage), accountRate: n(v.accountRate),
     leaseRate: n(v.leaseRate), balloonPct: n(v.balloonPct), fee: n(v.fee),
-    chargingInLease: v.chargingInLease, noExemption: v.noExemption, loanRate: n(v.loanRate)
+    chargingInLease: v.chargingInLease, noExemption: v.noExemption, loanRate: n(v.loanRate), homeRate: n(v.homeRate)
   };
 }

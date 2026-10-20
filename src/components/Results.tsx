@@ -1,7 +1,7 @@
 // The three result columns: each total, where it goes, the account at the end, and that option's own settings.
 import { Fragment, type ReactNode } from 'react';
 import type { Option, Result } from '../lib/calc';
-import { costNote, endFormula, splitLines } from '../lib/explain';
+import { borrowText, costNote, endFormula, splitLines } from '../lib/explain';
 import { pct, plural, usd } from '../lib/format';
 import type { Inputs } from '../lib/inputs';
 import { STATUTORY_RATE } from '../lib/rules';
@@ -74,7 +74,7 @@ interface ColumnProps {
 }
 
 function Column({ k, title, desc, i, r, cheapest, children }: ColumnProps) {
-  const cost = r.cost[k], best = cost <= cheapest + 0.5;
+  const cost = r.cost[k], best = cost <= cheapest + 0.5, borrow = borrowText(i, r, k);
   return (
     <div className={'col ' + k}>
       <h3>{title}</h3>
@@ -90,6 +90,7 @@ function Column({ k, title, desc, i, r, cheapest, children }: ColumnProps) {
         ))}
       </dl>
       <Derived label={<>Account after {plural(i.years, 'year')}<Info src="assumeRates" formula={endFormula(i, r, k)} /></>} value={usd(r.account[k].end)} />
+      <Derived label={<>Less to borrow for a home<Info src={['buffer', 'assumeLender']} formula={borrow.formula} /></>} value={borrow.value} />
       {children}
     </div>
   );

@@ -4,8 +4,8 @@ import { DUTY, dutyText } from './duty';
 import { dayBefore, longDate, pct, plural, usd } from './format';
 import type { Inputs } from './inputs';
 import {
-  CAR_LIMIT, CAR_TYPES, EV_ANNOUNCED, EV_DISCOUNT_RATE, EV_FULL_CAP, EV_PHASE2, EV_PHASE3, FBT_RATE, GROSS_UP_TYPE1, GROSS_UP_TYPE2,
-  GST, LCT_FUEL_EFFICIENT, PHEV_CUTOFF, RESIDUAL, RULES_CHECKED, STATUTORY_RATE, TAX_YEAR, TAX_YEAR_END
+  APRA_BUFFER, CAR_LIMIT, CAR_TYPES, EV_ANNOUNCED, EV_DISCOUNT_RATE, EV_FULL_CAP, EV_PHASE2, EV_PHASE3, FBT_RATE, GROSS_UP_TYPE1, GROSS_UP_TYPE2,
+  GST, HOME_DEPOSIT, HOME_LOAN_YEARS, LCT_FUEL_EFFICIENT, PHEV_CUTOFF, RESIDUAL, RULES_CHECKED, STATUTORY_RATE, TAX_YEAR, TAX_YEAR_END
 } from './rules';
 import type { SourceKey } from './sources';
 
@@ -72,6 +72,31 @@ export function endFormula(i: Inputs, r: Result, k: Option): string {
 }
 
 // The bonus goes in once a year, so it earns interest for less time than the same money paid as salary.
+// How much less a bank would lend for a home while the car is being paid off, and how that is worked out.
+export function borrowText(i: Inputs, r: Result, k: Option): { value: string; formula: string } {
+  const less = r.borrowLess[k], m = r.borrowMonthly[k];
+  const test = 'The bank tests a new mortgage at ' + i.homeRate + '% + ' + APRA_BUFFER * 100 + '% buffer over ' + HOME_LOAN_YEARS + ' years: '
+    + usd(r.homeMonthlyPer1 * 100000, true) + ' a month for every ' + usd(100000) + ' borrowed.';
+  const per = (x: number) => usd(x, true) + ' a month / ' + usd(r.homeMonthlyPer1 * 100000, true) + ' x ' + usd(100000) + ' = ' + usd(x / r.homeMonthlyPer1);
+  if (k === 'cash') {
+    return {
+      value: usd(0) + ' from the pay',
+      formula: 'No repayment, so the pay the bank sees stays the same. The account holds ' + usd(r.upfront) + ' less for a deposit. '
+        + 'If the deposit is what limits the loan, that is ' + usd(r.upfront / HOME_DEPOSIT) + ' less home price with a ' + pct(HOME_DEPOSIT) + ' deposit.'
+    };
+  }
+  const ends = ' It lasts while the car is paid off, ' + plural(i.years, 'year') + '.';
+  if (k === 'loan') return { value: usd(less[0]), formula: test + ' Repayment ' + per(m[0]) + '.' + ends };
+  return {
+    value: usd(Math.min(...less)) + ' to ' + usd(Math.max(...less)),
+    formula: test + ' Banks count a novated lease in one of two ways.'
+      + ' Payslip as it is, take-home pay drops by ' + per(m[0]) + '.'
+      + ' Salary sacrifice added back and the whole lease payment taken off, ' + per(m[1]) + '.'
+      + ' That payment holds ' + usd(r.leaseRunningYear / 12, true) + ' a month of running costs. The bank already counts living costs, so these may count twice.' + ends
+      + ' The balloon of ' + usd(r.balloon) + ' is due at the end.'
+  };
+}
+
 function bonusNote(i: Inputs, r: Result): Line[] {
   if (i.bonus <= 0) return [];
   return [{
