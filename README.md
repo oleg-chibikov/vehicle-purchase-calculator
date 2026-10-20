@@ -18,25 +18,55 @@ The page has one screen of content, in this order:
    The lease column folds its own settings (rate, balloon, fees, fuel through the lease, no FBT exemption). The loan column folds its rate.
 3. **How it is worked out** and **Sources for every number**, folded until you open them.
 
-Open `index.html` in a browser. There is no build step and no dependencies.
+The page is live at <https://oleg-chibikov.github.io/vehicle-purchase-calculator/>.
 
-The code sits next to the page, one file per job. The page loads the scripts in this order, because each one uses names from the files before it:
+## Running it locally
+
+The page is built with Vite, React and TypeScript. With Node 22 installed:
+
+1. `npm ci` installs the packages.
+2. `npm run dev` starts a local server that reloads on save.
+3. `npm test` checks the calculation against known totals.
+
+`npm run build` type-checks the code and writes the site to `dist/`, and `npm run preview` serves it. Opening `index.html` straight from disk shows a blank page, because the browser needs the built files.
+
+## Deploying
+
+Each push to `main` runs [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml). It runs the tests, builds the site and publishes `dist/` to GitHub Pages. A pull request runs the tests and the build only.
+
+Pages serves the site from `/vehicle-purchase-calculator/`, so `base` in `vite.config.ts` is set to that path. Rename the repo, and `base` has to change with it.
+
+## Where the code is
+
+The calculation sits in `src/lib` with no React in it, so the tests call it directly:
 
 | File | What it does |
 | --- | --- |
-| `js/format.js` | Formats money, percent and dates |
-| `js/rules.js` | Tax rates, FBT rules, car types and other fixed numbers |
-| `js/sources.js` | The source of every fixed number |
-| `js/fbt.js` | Picks the FBT rate for the car and the start date |
-| `js/calc.js` | Tax, payments, the account balance and the total cost of each option |
-| `js/duty.js` | Stamp duty for each state |
-| `js/info.js` | The **i** icons, their tooltips and the sources table |
-| `js/inputs.js` | Reads the fields and sets them back to their defaults |
-| `js/render.js` | Draws the results and the working |
-| `js/storage.js` | Keeps the changed fields in `localStorage` |
-| `js/main.js` | Wires up the page and draws it the first time |
+| `src/lib/format.ts` | Formats money, percent and dates |
+| `src/lib/rules.ts` | Tax rates, FBT rules, car types and other fixed numbers |
+| `src/lib/sources.ts` | The source of every fixed number |
+| `src/lib/fbt.ts` | Picks the FBT rate for the car and the start date |
+| `src/lib/duty.ts` | Stamp duty for each state |
+| `src/lib/calc.ts` | Tax, payments, the account balance and the total cost of each option |
+| `src/lib/explain.ts` | The notes, cost lines and formulas shown next to the numbers |
+| `src/lib/inputs.ts` | The fields, their defaults and the numbers read from them |
+| `src/lib/storage.ts` | Keeps the changed fields in `localStorage` |
+| `src/lib/calc.test.ts` | Pins the totals for the defaults, an offset and a savings account |
 
-The styles sit in `css/`: `base.css` for colors and type, then `form.css`, `results.css`, `tables.css` and `tooltip.css`. The scripts are plain scripts with no modules, so the page still opens straight from disk.
+The page itself:
+
+| File | What it does |
+| --- | --- |
+| `src/App.tsx` | Puts the page together |
+| `src/useForm.ts` | Holds the field values and saves each change |
+| `src/components/CarCard.tsx` | The inputs all three options share |
+| `src/components/Results.tsx` | The three columns, each with its own settings |
+| `src/components/Working.tsx` | "How it is worked out" |
+| `src/components/SourcesCard.tsx` | "Sources for every number" |
+| `src/components/Info.tsx` | The **i** icon and its tooltip |
+| `src/components/fields.tsx` | The form fields |
+
+The styles sit in `src/styles/`: `base.css` for colors and type, then `form.css`, `results.css`, `tables.css` and `tooltip.css`.
 
 The browser keeps the fields you changed in `localStorage`, so a reload shows them again. A start date you left alone stays today. "Reset to defaults" next to "Your car" clears them.
 
@@ -46,7 +76,7 @@ Every fixed number has a source. An **i** icon next to it opens a tooltip with t
 
 The **i** next to each cost line shows its formula with your numbers in cents, then the sources it uses.
 
-In the code, the constants sit in `js/rules.js` and each names its `SOURCES` entry in a comment. Every text that mentions a number is built from its constant, so a rule changes in one place. Each state's stamp duty rates sit once in the `DUTY` table, and both the formula and its description read them.
+In the code, the constants sit in `src/lib/rules.ts` and each names its `SOURCES` entry in a comment. Every text that mentions a number is built from its constant, so a rule changes in one place. Each state's stamp duty rates sit once in the `DUTY` table, and both the formula and its description read them.
 
 ## Running costs
 
