@@ -53,28 +53,35 @@ export function calc(i: Inputs) {
     // Any taxable value left after the contribution is taxed and charged to the package.
     fbtTax = (statutory - ecm) * GROSS_UP_TYPE1 * FBT_RATE;
   }
+  // A bonus is taxed with the salary. Shares the person keeps are taxed too, but no cash from them reaches the account.
+  const income = i.salary + i.bonus;
+  const kept = i.bonusKind === 'shares' ? i.bonus : 0;
   const leasePretaxYear = packageYear - (ecm - ecmGst) + fbtTax;
-  const leaseTaxable = i.salary - leasePretaxYear;
+  const leaseTaxable = income - leasePretaxYear;
   const leaseTax = taxOn(leaseTaxable);
-  const leaseYearCash = i.salary - leasePretaxYear - leaseTax.total - leaseRunningPost - ecm;
+  const leaseTakeHome = leaseTaxable - leaseTax.total;
+  const leaseYearCash = leaseTakeHome - kept - leaseRunningPost - ecm;
 
   // Loan: price and stamp duty borrowed, repayments come out of take-home pay.
   const loanMonthly = pmt(i.loanRate / 1200, n, upfront, 0);
-  const salaryTax = taxOn(i.salary);
-  const takeHome = i.salary - salaryTax.total;
-  const loanYearCash = takeHome - loanMonthly * 12 - runningFull;
+  const salaryTax = taxOn(income);
+  const takeHome = income - salaryTax.total;
+  const noCarYearCash = takeHome - kept;
+  const loanYearCash = noCarYearCash - loanMonthly * 12 - runningFull;
 
   // Cash purchase: price and stamp duty leave the account on day one.
-  const cashYearCash = takeHome - runningFull;
+  const cashYearCash = noCarYearCash - runningFull;
   const cashStart = i.start - upfront;
 
-  // All take-home pay goes into the account once a month. Each option pays its car costs out of it first.
+  // Take-home salary goes into the account once a month. Each option pays its car costs out of it first.
+  // The bonus after its own tax goes in once a year. With shares kept, only their tax comes out.
   const flow: Record<Option, number> = { lease: leaseYearCash, loan: loanYearCash, cash: cashYearCash };
-  const lease = simulate(i, i.start, flow.lease, leaseTaxable, balloon);
-  const loan = simulate(i, i.start, flow.loan, i.salary, 0);
-  const cash = simulate(i, cashStart, flow.cash, i.salary, 0);
-  // Baseline: same salary, same tax, same account, no car at all.
-  const noCar = simulate(i, i.start, takeHome, i.salary, 0);
+  const leaseLump = bonusLump(i, leaseTaxable), lump = bonusLump(i, income);
+  const lease = simulate(i, i.start, flow.lease, leaseLump, leaseTaxable, balloon);
+  const loan = simulate(i, i.start, flow.loan, lump, income, 0);
+  const cash = simulate(i, cashStart, flow.cash, lump, income, 0);
+  // Baseline: same pay, same tax, same account, no car at all.
+  const noCar = simulate(i, i.start, noCarYearCash, lump, income, 0);
 
   const running = runningFull * i.years;
   const gstSaved = gstCredit - residual * GST + (runningFull - leaseRunningPre - leaseRunningPost - ecmGst) * i.years;
@@ -89,7 +96,8 @@ export function calc(i: Inputs) {
 
   return {
     parts, n, duty, upfront, gstCredit, financed, residual, balloon,
-    leaseMonthly, leasePretaxYear, leaseTax, leaseYearCash,
+    income, kept, leaseLump, lump, noCarYearCash,
+    leaseMonthly, leasePretaxYear, leaseTax, leaseTakeHome, leaseYearCash,
     loanMonthly, salaryTax, takeHome, loanYearCash,
     cashYearCash, cashStart, flow,
     account: { lease, loan, cash } as Record<Option, Account>, noCar,
@@ -124,10 +132,17 @@ export function taxOn(taxable: number): Tax {
   return { taxable: t, rows, incomeTax, medicare, total: incomeTax + medicare };
 }
 
+// What the bonus adds to the account once a year: the cash bonus less the extra tax it brings.
+function bonusLump(i: Inputs, taxable: number): number {
+  const kept = i.bonusKind === 'shares' ? i.bonus : 0;
+  return i.bonus - kept - (taxOn(taxable).total - taxOn(taxable - i.bonus).total);
+}
+
 // Month by month: interest on the opening balance, then the month's pay left after the car.
+// `yearCash` holds the whole year, `lump` included. The lump goes in after the twelfth month.
 // Savings interest is taxed at the end of each year. Offset interest is tax free.
 // A negative balance costs the same rate and gives no tax deduction.
-function simulate(i: Inputs, startBalance: number, yearCash: number, salaryTaxable: number, endPayment: number): Account {
+function simulate(i: Inputs, startBalance: number, yearCash: number, lump: number, salaryTaxable: number, endPayment: number): Account {
   const monthlyRate = i.accountRate / 1200, offset = i.account !== 'savings', owing = Math.max(i.mortgage, 0);
   const salaryTax = taxOn(salaryTaxable);
   const years: number[] = [], taxes: Tax[] = [];
@@ -137,10 +152,11 @@ function simulate(i: Inputs, startBalance: number, yearCash: number, salaryTaxab
     for (let m = 0; m < 12; m++) {
       // An offset saves interest only on the part of the balance up to the mortgage owing. Below zero the mortgage grows.
       const interest = (offset ? Math.min(bal, owing) : bal) * monthlyRate;
-      bal += interest + yearCash / 12;
+      bal += interest + (yearCash - lump) / 12;
       interestYear += interest;
       if (interest > 0) taxableInterest += interest;
     }
+    bal += lump;
     const tax = i.account === 'savings' ? taxOn(salaryTaxable + taxableInterest) : salaryTax;
     const interestTax = tax.total - salaryTax.total;
     bal -= interestTax;

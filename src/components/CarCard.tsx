@@ -11,6 +11,7 @@ const CAR_TYPE_OPTIONS = [['ev', 'Electric (battery or hydrogen)'], ['phev', 'Pl
 const STATE_OPTIONS = STATES.map((s) => [s, s] as const);
 const YEAR_OPTIONS = ['1', '2', '3', '4', '5'].map((y) => [y, y] as const);
 const ACCOUNT_OPTIONS = [['offset', 'Mortgage offset'], ['savings', 'Savings']] as const;
+const BONUS_OPTIONS = [['cash', 'Cash, or shares sold when they vest'], ['shares', 'Shares I keep']] as const;
 
 interface CarCardProps {
   i: Inputs;
@@ -23,7 +24,9 @@ export function CarCard({ i, r, onReset }: CarCardProps) {
     <section className="card">
       <div className="cardhead"><h2>Your car</h2><button type="button" className="reset" onClick={onReset}>Reset to defaults</button></div>
       <div className="common">
-        <NumberField id="salary" label="Gross salary per year" hint="Excluding super" step={1000} />
+        <NumberField id="salary" label="Gross salary per year" hint="Excluding super. Paid into the account monthly" step={1000} />
+        <NumberField id="bonus" label="Bonus or shares per year" hint="Before tax. Paid once a year" src={['bonus']} step={1000} />
+        <SelectField id="bonusKind" label="Bonus paid as" hint="Kept shares are taxed but add no cash" src={['bonus']} options={BONUS_OPTIONS} hidden={i.bonus <= 0} />
         <NumberField id="price" label="Car price" hint="With GST and dealer delivery, before stamp duty and rego" step={500} />
         <SelectField id="carType" label="Car type" hint="Sets FBT, stamp duty and the fuel cost" src={['evExempt', 'phev', 'evChange', 'statutory']} options={CAR_TYPE_OPTIONS} />
         <SelectField id="state" label="State or territory" options={STATE_OPTIONS} />

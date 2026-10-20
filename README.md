@@ -89,7 +89,7 @@ Costs are flat per year with no inflation. Rego and CTP for the first year are c
 
 ## Interest on the account
 
-The account holds the cash you have today and the money the car takes out or gives back. Salary and living costs are the same in every option, so they stay out. Under each total the page shows the account at the end of the term.
+The account holds the cash you have today. Take-home pay goes in, and the car's costs come out. Living costs are the same in every option, so they stay out. Under each total the page shows the account at the end of the term.
 
 The balance earns interest every month at the account rate (default 6%), in all three options and in the no-car baseline. Pick where the money sits:
 
@@ -161,7 +161,7 @@ These are the inputs a novated lease quote is built from:
 
 The monthly payment is not an input. It is calculated from the rate, term and balloon. If a provider gives you a monthly payment instead, adjust the interest rate until the payment on the page matches.
 
-Other inputs, folded next to the part of the page they change: gross salary (excluding super), a loan interest rate for the comparison (default 9%, an estimate, not market data), the cash in the account today, the account type, the mortgage owing for an offset, the account interest rate, the four yearly running costs, and a checkbox that models the lease without the FBT exemption.
+Other inputs, folded next to the part of the page they change: gross salary (excluding super), a yearly bonus or shares before tax and whether the shares are kept, a loan interest rate for the comparison (default 9%, an estimate, not market data), the cash in the account today, the account type, the mortgage owing for an offset, the account interest rate, the four yearly running costs, and a checkbox that models the lease without the FBT exemption.
 
 ## Tax used: 2026-27 resident rates
 
@@ -180,17 +180,18 @@ Source: [ATO individual income tax rates](https://www.ato.gov.au/tax-rates-and-c
 ## How the numbers are worked out
 
 1. **Lease payment.** The employer claims the GST on the price back, up to $6,353 (one eleventh of the 2026-27 [car limit](https://www.ato.gov.au/businesses-and-organisations/small-business-newsroom/car-thresholds-from-1-july) of $69,883). Financed = price - GST credit + stamp duty. The ATO residual is a share of the financed amount without GST: residual = financed x balloon %. Payment = (financed - residual / (1 + r)^n) x r / (1 - (1 + r)^-n), with r the monthly rate and n the number of months, paid at the end of each month. At the end you pay the residual plus GST.
-2. **Lease tax.** The lease payments, fees and running costs come out of salary before tax. Without the FBT exemption, the post-tax contribution comes out of take-home pay instead, and the pre-tax part drops by ten elevenths of it. Taxable income = salary - the pre-tax part. Tax is calculated tier by tier, plus Medicare.
+2. **Lease tax.** The lease payments, fees and running costs come out of salary before tax. Without the FBT exemption, the post-tax contribution comes out of take-home pay instead, and the pre-tax part drops by ten elevenths of it. Taxable income = salary + bonus - the pre-tax part. Tax is calculated tier by tier, plus Medicare.
 3. **Loan.** The loan borrows the price with GST plus stamp duty. Repayments and running costs come out of take-home pay after tax.
-4. **Pay into the account per year.** All take-home pay goes into the account, less what the car costs. Lease: salary - pre-tax part - tax - post-tax contribution - running costs paid after tax. Loan: salary - tax - repayments - running costs. With no car: salary - tax. Living costs are not taken out.
+4. **Pay into the account per year.** All take-home pay goes into the account, less what the car costs. Lease: salary + bonus - pre-tax part - tax - post-tax contribution - running costs paid after tax. Loan: salary + bonus - tax - repayments - running costs. With no car: salary + bonus - tax. Shares you keep are taxed and add no cash, so only their tax comes out. Living costs are not taken out.
 5. **Cash purchase.** The price and stamp duty are taken from the account at the start, so the balance can begin below zero. Pay into the account per year is take-home pay minus the running costs. Tax on salary is the same as with the loan.
-6. **Final balance.** Each month the account earns interest on its balance, then gets one twelfth of the yearly pay left after the car. An offset earns only on the balance up to the mortgage owing. Savings interest is taxed at the end of each year. For the lease, the balloon with GST is paid from the account at the end.
+6. **Final balance.** Each month the account earns interest on its balance, then gets one twelfth of the yearly pay left after the car. The bonus after its own tax goes in once, after the twelfth month of each year. The extra tax the bonus brings is taken from the bonus. An offset earns only on the balance up to the mortgage owing. Savings interest is taxed at the end of each year. For the lease, the balloon with GST is paid from the account at the end.
 7. **Total cost of the car.** Balance with no car (same salary, same account, same interest) minus the final balance of the option. This includes the price, stamp duty, loan interest, lost account interest and running costs.
 
 ## Assumptions
 
-- Australian tax resident, no HELP debt, no other income, flat salary for the whole term.
-- All take-home pay goes into the account once a month. Living costs and mortgage repayments are not taken out, and the mortgage owing stays the same.
+- Australian tax resident, no HELP debt, no income besides salary and the bonus. Both stay flat for the whole term.
+- The bonus or share vest comes once a year, at the end of each year of the term. Shares are taxed at their value when they vest.
+- All take-home salary goes into the account once a month. Weekly or fortnightly pay changes the cost by a few hundred dollars over 5 years, so the calculation keeps it monthly. Living costs and mortgage repayments are not taken out, and the mortgage owing stays the same.
 - FBT follows the car type, the start date and the price, as in "Car type and fringe benefits tax". The changes from 1 April 2027 were announced on 5 May 2026 and are not yet law. The base value drop after 4 years is not modelled.
 - Fuel and charging defaults (15,000 km a year, $0.30 per kWh, $2.00 per litre) are examples.
 - Defaults (salary $200,000, price $50,000 in NSW, lease rate 7.5%, loan rate 9%, offset at 6%) are examples, not a quote.

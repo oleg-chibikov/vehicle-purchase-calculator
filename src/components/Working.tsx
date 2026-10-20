@@ -57,23 +57,26 @@ function WorkRows({ i, r }: { i: Inputs; r: Result }) {
     <>
       <Head>Pay</Head>
       <Row label="Gross salary" cells={[usd(i.salary), usd(i.salary), usd(i.salary)]} />
+      {i.bonus > 0 && <Row label={<>Bonus or shares, before tax<Info src="bonus" /></>} cells={[usd(i.bonus), usd(i.bonus), usd(i.bonus)]} />}
       <Row cls="sub" label={<>Lease payments, fees and running costs, without GST<Info src={['gst', 'assumeFuelGst']} /></>} cells={['-' + usd(r.packageYear), '-', '-']} />
       {!r.fbt.exempt && <Row cls="sub" label={<>Less the post-tax contribution, without its GST<Info src={['statutory', 'ecmGst']} /></>} cells={['+' + usd(r.ecm - r.ecmGst), '-', '-']} />}
       {!r.fbt.exempt && r.fbtTax > 0.005 && <Row cls="sub" label={<>FBT on the taxable value left, charged pre-tax<Info src="fbtRates" /></>} cells={['-' + usd(r.fbtTax), '-', '-']} />}
-      <Row cls="total" label="Taxable income from salary" cells={[usd(L.taxable), usd(S.taxable), usd(S.taxable)]} />
-      <Head>Income tax on salary by tier, {TAX_YEAR}<Info src="tax" /></Head>
+      <Row cls="total" label="Taxable income" cells={[usd(L.taxable), usd(S.taxable), usd(S.taxable)]} />
+      <Head>Income tax by tier, {TAX_YEAR}<Info src="tax" /></Head>
       {L.rows.map((lr, k) => (
         <Row key={k} label={tierLabel(lr)} cells={[<TierCell t={lr} />, <TierCell t={S.rows[k]} />, <TierCell t={S.rows[k]} />]} />
       ))}
       <Row cls="sub" label={<>Medicare levy, {pct(MEDICARE)}<Info src="medicare" /></>} cells={[usd(L.medicare), usd(S.medicare), usd(S.medicare)]} />
-      <Row cls="total" label="Total tax on salary" cells={[usd(L.total), usd(S.total), usd(S.total)]} />
+      <Row cls="total" label="Total income tax" cells={[usd(L.total), usd(S.total), usd(S.total)]} />
       <Head>What is left</Head>
-      <Row label="Take-home pay" cells={[usd(i.salary - r.leasePretaxYear - L.total), usd(r.takeHome), usd(r.takeHome)]} />
+      <Row label="Take-home pay" cells={[usd(r.leaseTakeHome), usd(r.takeHome), usd(r.takeHome)]} />
+      {r.kept > 0 && <Row cls="sub" label="Shares kept, no cash from them" cells={['-' + usd(r.kept), '-' + usd(r.kept), '-' + usd(r.kept)]} />}
       <Row cls="sub" label="Loan repayments, after tax" cells={['-', '-' + usd(r.loanMonthly * 12), '-']} />
       {r.ecm > 0 && <Row cls="sub" label={<>Post-tax contribution to the lease, with GST<Info src={['statutory', 'ecmGst']} /></>} cells={['-' + usd(r.ecm), '-', '-']} />}
       <Row cls="sub" label="Running costs paid from take-home pay" cells={[r.leaseRunningPost > 0 ? '-' + usd(r.leaseRunningPost) : '-', '-' + usd(r.runningFull), '-' + usd(r.runningFull)]} />
       <Row cls="total" label="Take-home pay left after the car, paid into the account per year" cells={[usd(r.flow.lease), usd(r.flow.loan), usd(r.flow.cash)]} />
-      <Row cls="sub" label="With no car, all take-home pay goes in" cells={[usd(r.takeHome), usd(r.takeHome), usd(r.takeHome)]} />
+      {i.bonus > 0 && <Row cls="sub" label={<>{r.kept > 0 ? 'Of that, the tax on the shares, paid once a year' : 'Of that, the bonus after its tax, paid once a year'}<Info src="bonus" /></>} cells={[usd(r.leaseLump), usd(r.lump), usd(r.lump)]} />}
+      <Row cls="sub" label="With no car, all take-home pay goes in" cells={[usd(r.noCarYearCash), usd(r.noCarYearCash), usd(r.noCarYearCash)]} />
       <Head>Over the whole term</Head>
       <Row cls="sub" label="Paid up front, price and stamp duty" cells={['-', '-', usd(r.upfront)]} />
       <Row cls="sub" label={<>Balloon paid at the end, with GST<Info src={['residual', 'gst']} /></>} cells={[usd(r.balloon), '-', '-']} />

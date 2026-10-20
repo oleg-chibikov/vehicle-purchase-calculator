@@ -33,6 +33,27 @@ describe('calc', () => {
     expect(costs({ start: '600000', account: 'savings' })).toEqual([52106, 92187, 83165]);
   });
 
+  it('taxes a bonus with the salary and pays it in once a year', () => {
+    const at0 = (changes: Partial<FormValues>) => calc(readInputs({ ...defaultValues(), startDate: '2026-10-20', accountRate: '0', ...changes }));
+    const salary = at0({ salary: '200000' }), bonus = at0({ salary: '150000', bonus: '50000' });
+    expect(bonus.salaryTax.total).toBeCloseTo(salary.salaryTax.total, 6);
+    expect(bonus.leaseTax.total).toBeCloseTo(salary.leaseTax.total, 6);
+    expect(bonus.noCar.end).toBeCloseTo(salary.noCar.end, 6);
+    // At a real rate the bonus earns interest for less time than the same pay as salary.
+    const late = calc(readInputs({ ...defaultValues(), startDate: '2026-10-20', salary: '150000', bonus: '50000' }));
+    expect(late.noCar.end).toBeLessThan(calc(readInputs({ ...defaultValues(), startDate: '2026-10-20' })).noCar.end);
+  });
+
+  it('takes only the tax on shares that are kept', () => {
+    const r = calc(readInputs({ ...defaultValues(), startDate: '2026-10-20', accountRate: '0', bonus: '50000', bonusKind: 'shares' }));
+    expect(r.noCar.end).toBeCloseTo((r.takeHome - 50000) * r.n / 12, 6);
+    expect(r.lump).toBeCloseTo(-(r.salaryTax.total - calc(readInputs({ ...defaultValues(), accountRate: '0' })).salaryTax.total), 6);
+    for (const k of ['lease', 'loan', 'cash'] as const) {
+      const sum = Object.values(r.parts[k]).reduce((a, b) => a + (b ?? 0), 0);
+      expect(sum).toBeCloseTo(r.cost[k], 6);
+    }
+  });
+
   it('works out NSW stamp duty on a $50,000 car', () => {
     expect(calc(readInputs(defaultValues())).duty).toBe(1600);
   });

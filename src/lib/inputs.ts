@@ -5,9 +5,12 @@ import { CAR_TYPES, type CarType } from './rules';
 export const STATES = ['NSW', 'VIC', 'QLD', 'SA', 'WA', 'TAS', 'ACT', 'NT'] as const;
 export type State = (typeof STATES)[number];
 export type Account = 'offset' | 'savings';
+export type BonusKind = 'cash' | 'shares';
 
 export interface Inputs {
   salary: number;
+  bonus: number;
+  bonusKind: BonusKind;
   price: number;
   carType: CarType;
   state: State;
@@ -35,6 +38,8 @@ export type FormValues = { [K in FieldId]: Inputs[K] extends boolean ? boolean :
 
 export const DEFAULTS: Omit<FormValues, 'startDate' | 'charging'> = {
   salary: '200000',
+  bonus: '0',
+  bonusKind: 'cash',
   price: '50000',
   carType: 'ev',
   state: 'NSW',
@@ -64,7 +69,8 @@ export const OPTIONS: Partial<Record<FieldId, readonly string[]>> = {
   carType: Object.keys(CAR_TYPES),
   state: STATES,
   years: ['1', '2', '3', '4', '5'],
-  account: ['offset', 'savings']
+  account: ['offset', 'savings'],
+  bonusKind: ['cash', 'shares']
 };
 
 export function readInputs(v: FormValues): Inputs {
@@ -73,7 +79,7 @@ export function readInputs(v: FormValues): Inputs {
     return Number.isFinite(x) ? x : 0;
   };
   return {
-    salary: n(v.salary), price: n(v.price), carType: v.carType as CarType, state: v.state as State,
+    salary: n(v.salary), bonus: Math.max(0, n(v.bonus)), bonusKind: v.bonusKind as BonusKind, price: n(v.price), carType: v.carType as CarType, state: v.state as State,
     years: Math.max(1, Math.min(5, Math.round(n(v.years)))), startDate: v.startDate || today(),
     rego: n(v.rego), insurance: n(v.insurance), service: n(v.service), charging: n(v.charging),
     start: n(v.start), account: v.account as Account, mortgage: n(v.mortgage), accountRate: n(v.accountRate),

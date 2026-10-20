@@ -17,7 +17,8 @@ export interface SplitLine { label: string; value: number; formula: string; src:
 export function costNote(i: Inputs, r: Result, now: string): Line[] {
   return [
     { text: 'Cost = the account with no car (' + usd(r.noCar.end) + ' at the end) minus the account with the car. You own the car in all three cases. Its resale value is not counted.' },
-    { text: 'The account starts with the cash today. Each month all take-home pay goes in, less what the car costs that month. Living costs are not taken out.' },
+    { text: 'The account starts with the cash today. Each month all take-home salary goes in, less what the car costs that month. Living costs are not taken out.' },
+    ...bonusNote(i, r),
     {
       text: i.account === 'savings'
         ? 'The account earns ' + i.accountRate + '% a year, taxed as savings interest.'
@@ -39,7 +40,7 @@ export function splitLines(i: Inputs, r: Result, k: Option): SplitLine[] {
     running: ['Running costs', '(rego ' + usd(i.rego, true) + ' + insurance ' + usd(i.insurance, true) + ' + servicing ' + usd(i.service, true) + ' + fuel or charging ' + usd(i.charging, true) + ')' + yrs + ' = ' + usd(p.running, true), ['assumeFuel']],
     gst: [(p.gst ?? 0) > 0 ? 'GST paid, net' : 'GST saved', 'GST credit on the car ' + usd(r.gstCredit, true) + ' - GST on the balloon ' + usd(r.balloon - r.residual, true) + ' + GST saved on running costs ' + usd(r.runningFull - r.leaseRunningYear, true) + yrs + (r.ecmGst ? ' - GST on the post-tax contribution ' + usd(r.ecmGst, true) + yrs : '') + ' = ' + usd(-(p.gst ?? 0), true), ['gst', 'carLimit', 'assumeFuelGst', 'ecmGst']],
     fbt: ['Fringe benefits tax', usd(r.fbtTax, true) + ' a year' + yrs + ' = ' + usd(p.fbt ?? 0, true), ['fbtRates']],
-    tax: [(p.tax ?? 0) > 0 ? 'Extra income tax' : 'Income tax saved', 'Tax on the salary ' + usd(r.salaryTax.total, true) + ' - tax with the lease ' + usd(r.leaseTax.total, true) + ' = ' + usd(r.salaryTax.total - r.leaseTax.total, true) + ' a year' + yrs + ' = ' + usd(-(p.tax ?? 0), true), ['tax', 'medicare']]
+    tax: [(p.tax ?? 0) > 0 ? 'Extra income tax' : 'Income tax saved', 'Tax on the pay ' + usd(r.salaryTax.total, true) + ' - tax with the lease ' + usd(r.leaseTax.total, true) + ' = ' + usd(r.salaryTax.total - r.leaseTax.total, true) + ' a year' + yrs + ' = ' + usd(-(p.tax ?? 0), true), ['tax', 'medicare']]
   };
   const total = Math.round(r.cost[k]), out: SplitLine[] = [];
   let rest = total;
@@ -67,7 +68,18 @@ export function endFormula(i: Inputs, r: Result, k: Option): string {
     + (i.account === 'savings' ? ' + interest ' : ' + mortgage interest saved ') + usd(s.interest, true)
     + (s.interestTax ? ' - tax on it ' + usd(s.interestTax, true) : '')
     + (k === 'lease' ? ' - balloon ' + usd(r.balloon, true) : '') + ' = ' + usd(s.end, true)
-    + '. With no car, take-home pay ' + usd(r.takeHome, true) + ' a year goes in and the account ends at ' + usd(r.noCar.end, true) + '.';
+    + '. With no car, take-home pay ' + usd(r.noCarYearCash, true) + ' a year goes in and the account ends at ' + usd(r.noCar.end, true) + '.';
+}
+
+// The bonus goes in once a year, so it earns interest for less time than the same money paid as salary.
+function bonusNote(i: Inputs, r: Result): Line[] {
+  if (i.bonus <= 0) return [];
+  return [{
+    text: i.bonusKind === 'cash'
+      ? 'The bonus of ' + usd(i.bonus) + ' is taxed with the salary. After its tax, ' + usd(r.lump) + ' goes in once a year, at the end of each year of the term.'
+      : 'The shares worth ' + usd(i.bonus) + ' are taxed with the salary but stay out of the account. Their tax of ' + usd(-r.lump) + ' comes out once a year, at the end of each year of the term.',
+    src: ['bonus', 'tax']
+  }];
 }
 
 export function formulaLines(i: Inputs, r: Result): Line[] {
