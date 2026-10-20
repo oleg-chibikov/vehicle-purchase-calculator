@@ -101,7 +101,7 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
 <div class="wrap">
   <header>
     <h1>Vehicle Purchase Calculator</h1>
-    <p class="sub">Australia only. Compares three ways to pay for an electric car and shows how much money is in your account at the end of the term. Running costs (rego, insurance, servicing, charging) are included in all three. Defaults are examples, not a quote.</p>
+    <p class="sub">Australia only. Compares three ways to pay for an electric car and shows how much money is in your account at the end of the term. Stamp duty, running costs (rego, insurance, servicing, charging) and interest on the account are included in all three. Defaults are examples, not a quote.</p>
   </header>
 
   <div class="flag" id="flag" hidden></div>
@@ -110,14 +110,20 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
     <h2>Parameters</h2>
     <div class="common">
       <div class="field"><label for="salary">Gross salary per year<small>Excluding super</small></label><input id="salary" type="number" inputmode="decimal" step="1000" value="200000"></div>
-      <div class="field"><label for="price">Car price, drive-away<small>Including GST and on-road costs</small></label><input id="price" type="number" inputmode="decimal" step="500" value="50000"></div>
+      <div class="field"><label for="price">Car price<small>Including GST and dealer delivery, before stamp duty and rego</small></label><input id="price" type="number" inputmode="decimal" step="500" value="50000"></div>
+      <div class="field"><label for="state">State or territory<small>Sets the stamp duty</small></label>
+        <select id="state"><option value="NSW" selected>NSW</option><option value="VIC">VIC</option><option value="QLD">QLD</option><option value="SA">SA</option><option value="WA">WA</option><option value="TAS">TAS</option><option value="ACT">ACT</option><option value="NT">NT</option></select></div>
       <div class="field"><label for="years">Term, years</label>
         <select id="years"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option></select></div>
       <div class="field"><label for="start">Starting balance<small>Cash in the account today</small></label><input id="start" type="number" inputmode="decimal" step="1000" value="0"></div>
+      <div class="field"><label for="account">Account type<small>Where the money sits</small></label>
+        <select id="account"><option value="offset" selected>Mortgage offset</option><option value="savings">Savings</option></select></div>
+      <div class="field"><label for="accountRate">Account interest, % p.a.<small>Mortgage rate for an offset, or the savings rate</small></label><input id="accountRate" type="number" inputmode="decimal" step="0.05" value="6"></div>
+      <div class="derived"><span id="dutyLabel">Stamp duty</span><b id="pDuty"></b></div>
     </div>
 
     <div class="common">
-      <div class="field"><label for="rego">Rego and CTP per year<small>No GST</small></label><input id="rego" type="number" inputmode="decimal" step="50" value="1000"></div>
+      <div class="field"><label for="rego">Rego and CTP per year<small>No GST. The first year is counted here, not in the price</small></label><input id="rego" type="number" inputmode="decimal" step="50" value="1000"></div>
       <div class="field"><label for="insurance">Insurance per year<small>Including GST</small></label><input id="insurance" type="number" inputmode="decimal" step="50" value="1800"></div>
       <div class="field"><label for="service">Servicing and tyres per year<small>Including GST</small></label><input id="service" type="number" inputmode="decimal" step="50" value="600"></div>
       <div class="field"><label for="charging">Charging per year<small>About 15,000 km at $0.30 per kWh</small></label><input id="charging" type="number" inputmode="decimal" step="50" value="765"></div>
@@ -131,21 +137,25 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
         <div class="field"><label for="leaseRate">Interest rate, % p.a.<small>Financier rate on the quote</small></label><input id="leaseRate" type="number" inputmode="decimal" step="0.05" value="7.5"></div>
         <div class="field"><label for="balloonPct">Balloon, %<small>ATO minimum for the term</small></label><input id="balloonPct" type="number" inputmode="decimal" step="0.01" value="28.13"></div>
         <div class="field"><label for="fee">Provider fees per year<small>Pre-tax</small></label><input id="fee" type="number" inputmode="decimal" step="10" value="0"></div>
+        <div class="derived"><span>GST credit claimed by the employer</span><b id="pGst"></b></div>
+        <div class="derived"><span>Amount financed, without GST, with stamp duty</span><b id="pFinanced"></b></div>
         <div class="derived"><span>Monthly payment, pre-tax</span><b id="pLease"></b></div>
         <div class="derived"><span>Running costs per year, via lease</span><b id="pRunLease"></b></div>
-        <div class="derived"><span>Balloon at the end</span><b id="pBalloon"></b></div>
+        <div class="derived"><span>Residual, without GST</span><b id="pResidual"></b></div>
+        <div class="derived"><span>Balloon paid at the end, with GST</span><b id="pBalloon"></b></div>
       </div>
       <div class="col loan">
         <h3>Car loan</h3>
-        <p class="desc">Repayments come out of pay after tax. Full price including GST is borrowed.</p>
-        <div class="field"><label for="loanRate">Interest rate, % p.a.</label><input id="loanRate" type="number" inputmode="decimal" step="0.01" value="0.09"></div>
+        <p class="desc">Repayments come out of pay after tax. The price with GST and stamp duty is borrowed.</p>
+        <div class="field"><label for="loanRate">Interest rate, % p.a.</label><input id="loanRate" type="number" inputmode="decimal" step="0.01" value="9"></div>
+        <div class="derived"><span>Amount borrowed</span><b id="pBorrowed"></b></div>
         <div class="derived"><span>Monthly repayment, after tax</span><b id="pLoan"></b></div>
         <div class="derived"><span>Running costs per year, after tax</span><b id="pRunLoan"></b></div>
         <div class="derived"><span>Balloon at the end</span><b>none</b></div>
       </div>
       <div class="col cash">
         <h3>Cash purchase</h3>
-        <p class="desc">The full price leaves the account on day one. No repayments.</p>
+        <p class="desc">The price and stamp duty leave the account on day one. No repayments.</p>
         <div class="derived"><span>Paid on day one</span><b id="pCash"></b></div>
         <div class="derived"><span>Monthly payment</span><b>none</b></div>
         <div class="derived"><span>Running costs per year, after tax</span><b id="pRunCash"></b></div>
@@ -160,7 +170,7 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
       <div class="col loan res"><span class="badge" id="bLoan" hidden>Highest</span><div class="big" id="rLoan"></div><div class="lbl" id="sLoan"></div></div>
       <div class="col cash res"><span class="badge" id="bCash" hidden>Highest</span><div class="big" id="rCash"></div><div class="lbl" id="sCash"></div></div>
     </div>
-    <p class="lbl" style="margin-top:12px">In all three cases you own the car at the end. Car resale value is not included.</p>
+    <p class="lbl" style="margin-top:12px" id="balNote"></p>
   </section>
 
   <section class="card" aria-live="polite">
@@ -175,7 +185,7 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
 
   <section class="card" aria-live="polite">
     <h2>Total cost of the car</h2>
-    <p class="lbl">Balance with no car at all, minus the balance in each case. Same salary, same tax rules.</p>
+    <p class="lbl">Balance with no car at all, minus the balance in each case. Same salary, same tax rules, same account interest.</p>
     <div class="cols">
       <div class="col lease res"><div class="big" id="cLease"></div><div class="lbl" id="dLease"></div></div>
       <div class="col loan res"><div class="big" id="cLoan"></div><div class="lbl" id="dLoan"></div></div>
@@ -201,8 +211,8 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
   </section>
 
   <section class="card">
-    <h2>Lease payment formula</h2>
-    <p>A novated lease finances the price without GST, because the employer claims the GST back. The payment depends on the interest rate, the term and the balloon.</p>
+    <h2>Stamp duty and lease payment formula</h2>
+    <p>A novated lease finances the price without GST, because the employer claims the GST back. The GST credit on a car is capped at one eleventh of the car limit ($69,883 for 2026-27). Stamp duty has no GST and is financed in full. The ATO residual is a share of the amount financed without GST, and GST is added when you buy the car at the end.</p>
     <div class="formula" id="formula"></div>
   </section>
 
@@ -211,12 +221,16 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
     <ul>
       <li>Resident of Australia, no HELP debt, no other income, salary stays flat for the whole term.</li>
       <li>Tax tiers for 2026-27: 0% to $18,200, 15% to $45,000, 30% to $135,000, 37% to $190,000, 45% above. Medicare levy 2% of taxable income.</li>
-      <li>The electric car is exempt from fringe benefits tax, so the whole lease payment is pre-tax. This needs a car priced under the luxury car tax threshold for fuel-efficient vehicles (about $91,661 for 2026-27).</li>
-      <li>The cash purchase starts the term with the price taken out of the account, so its balance can start below zero if the starting balance is smaller than the price. Interest the money could have earned is not counted.</li>
+      <li>The electric car is exempt from fringe benefits tax, so the whole lease payment is pre-tax. This needs a car priced under the luxury car tax threshold for fuel-efficient vehicles ($91,661 for 2026-27). That check uses the price with GST and without stamp duty and rego.</li>
+      <li>The cash purchase starts the term with the price and stamp duty taken out of the account, so its balance can start below zero if the starting balance is smaller.</li>
+      <li>The account earns interest every month at the rate you enter. In a mortgage offset the interest saved is tax free. In a savings account the interest is added to taxable income and the extra tax is paid at the end of each year. A balance below zero costs the same rate with no tax deduction: a bigger mortgage for an offset, a loan for savings.</li>
+      <li>Salary, lease payments, loan repayments and running costs are paid monthly at the end of each month. Some lease providers charge in advance, which makes the payment slightly lower.</li>
+      <li>Stamp duty is worked out from the car price for a new electric car in the chosen state or territory, and the formula is shown under "Stamp duty and lease payment formula". The rules come from each revenue office as last known and are not checked for 2026-27 changes. Check yours with the state revenue office. It is part of the amount financed by the lease and the loan. Rego and CTP for the first year are counted in the yearly running costs, not in the price.</li>
+      <li>The GST credit on the car is capped at $6,353 (one eleventh of the 2026-27 car limit of $69,883). Above that price the lease finances more than the price divided by 1.1.</li>
       <li>Running costs through the lease are paid before tax. GST is recovered on insurance and servicing, so those cost one eleventh less. Rego and CTP carry no GST. With a loan or cash they are paid from take-home pay including GST.</li>
       <li>Home charging is treated as reimbursed pre-tax with no GST saving. Untick the box if your provider does not cover it, and it is paid from take-home pay instead.</li>
       <li>Running costs are flat per year with no inflation. They are the same car and the same use in all three cases.</li>
-      <li>Not included: super effects, the reportable fringe benefits amount, early termination fees, car resale value, road user charges.</li>
+      <li>Not included: super effects, the reportable fringe benefits amount, early termination fees, car resale value, road user charges, the stamp duty inside insurance premiums.</li>
       <li>This is not tax or financial advice. Check real numbers with a lease quote and a tax professional.</li>
     </ul>
   </section>
@@ -232,6 +246,9 @@ var TIERS = [
 ];
 var MEDICARE = 0.02;
 var GST = 0.10;
+// Car limit for 2026-27. The GST credit on a car is capped at one eleventh of it.
+var CAR_LIMIT = 69883;
+var LCT_FUEL_EFFICIENT = 91661;
 var RESIDUAL = { 1: 65.63, 2: 56.25, 3: 46.88, 4: 37.5, 5: 28.13 };
 
 function pmt(ratePerMonth, n, pv, fv) {
@@ -255,65 +272,137 @@ function taxOn(taxable) {
   return { taxable: t, rows: rows, incomeTax: total, medicare: medicare, total: total + medicare };
 }
 
+function sumTax(list) {
+  var s = { taxable: 0, incomeTax: 0, medicare: 0, total: 0, rows: TIERS.map(function (b) {
+    return { from: b.from, to: b.to, rate: b.rate, inBand: 0, tax: 0 };
+  }) };
+  list.forEach(function (t) {
+    s.taxable += t.taxable; s.incomeTax += t.incomeTax; s.medicare += t.medicare; s.total += t.total;
+    t.rows.forEach(function (r, k) { s.rows[k].inBand += r.inBand; s.rows[k].tax += r.tax; });
+  });
+  return s;
+}
+
+// Month by month: interest on the opening balance, then the month's cash flow.
+// Savings interest is taxed at the end of each year. Offset interest is tax free.
+// A negative balance costs the same rate and gives no tax deduction.
+function simulate(i, startBalance, yearCash, salaryTaxable, endPayment) {
+  var monthlyRate = i.accountRate / 1200;
+  var bal = startBalance, years = [], taxes = [], interestTotal = 0, interestTaxTotal = 0;
+  var salaryTax = taxOn(salaryTaxable);
+  for (var y = 1; y <= i.years; y++) {
+    var interestYear = 0, taxableInterest = 0;
+    for (var m = 0; m < 12; m++) {
+      var interest = bal * monthlyRate;
+      bal += interest + yearCash / 12;
+      interestYear += interest;
+      if (interest > 0) taxableInterest += interest;
+    }
+    var tax = i.account === 'savings' ? taxOn(salaryTaxable + taxableInterest) : salaryTax;
+    var interestTax = tax.total - salaryTax.total;
+    bal -= interestTax;
+    interestTotal += interestYear;
+    interestTaxTotal += interestTax;
+    taxes.push(tax);
+    years.push({ year: y, balance: bal });
+  }
+  return { years: years, beforeEnd: bal, end: bal - (endPayment || 0), tax: sumTax(taxes),
+    interest: interestTotal, interestTax: interestTaxTotal };
+}
+
 function calc(i) {
   var n = i.years * 12;
-  var balloon = i.price * i.balloonPct / 100;
+  var duty = stampDuty(i.state, i.price);
+  var upfront = i.price + duty;
 
-  // Novated lease: GST-free price is financed, payments come out of pre-tax pay.
-  var financed = i.price / (1 + GST);
-  var leaseMonthly = pmt(i.leaseRate / 1200, n, financed, balloon);
+  // Novated lease: the employer claims the GST back, capped by the car limit. Stamp duty has no GST and is financed.
+  var gstCredit = Math.min(i.price / 11, CAR_LIMIT / 11);
+  var financed = i.price - gstCredit + duty;
+  // The ATO residual is a share of the amount financed without GST. GST is added when the car is bought at the end.
+  var residual = financed * i.balloonPct / 100;
+  var balloon = residual * (1 + GST);
+  var leaseMonthly = pmt(i.leaseRate / 1200, n, financed, residual);
   // Running costs paid through the lease: GST is recovered on insurance and servicing.
   var runningFull = i.rego + i.insurance + i.service + i.charging;
   var leaseRunningPre = i.rego + (i.insurance + i.service) / (1 + GST) + (i.chargingInLease ? i.charging : 0);
   var leaseRunningPost = i.chargingInLease ? 0 : i.charging;
   var leasePretaxYear = leaseMonthly * 12 + i.fee + leaseRunningPre;
-  var leaseTax = taxOn(i.salary - leasePretaxYear);
+  var leaseTaxable = i.salary - leasePretaxYear;
+  var leaseTax = taxOn(leaseTaxable);
   var leaseYearCash = i.salary - leasePretaxYear - leaseTax.total - leaseRunningPost;
 
-  // Loan: full price financed, repayments come out of take-home pay.
-  var loanMonthly = pmt(i.loanRate / 1200, n, i.price, 0);
+  // Loan: price and stamp duty borrowed, repayments come out of take-home pay.
+  var loanMonthly = pmt(i.loanRate / 1200, n, upfront, 0);
   var loanTax = taxOn(i.salary);
   var loanTakeHome = i.salary - loanTax.total;
   var loanYearCash = loanTakeHome - loanMonthly * 12 - runningFull;
 
-  // Cash purchase: full price leaves the account on day one, no repayments, same tax as the loan.
-  var cashTax = loanTax;
+  // Cash purchase: price and stamp duty leave the account on day one.
   var cashYearCash = loanTakeHome - runningFull;
-  var cashStart = i.start - i.price;
+  var cashStart = i.start - upfront;
 
-  var years = [], lb = i.start, kb = i.start, cb = cashStart;
-  for (var y = 1; y <= i.years; y++) {
-    lb += leaseYearCash;
-    kb += loanYearCash;
-    cb += cashYearCash;
-    years.push({ year: y, leaseChange: leaseYearCash, leaseBalance: lb, loanChange: loanYearCash, loanBalance: kb,
-      cashChange: cashYearCash, cashBalance: cb });
-  }
-  var leaseBeforeBalloon = lb;
-  var leaseEnd = lb - balloon;
-  var loanEnd = kb;
-  var cashEnd = cb;
-  // Baseline: same salary, same tax, no car at all.
-  var noCarEnd = i.start + i.years * loanTakeHome;
+  var lease = simulate(i, i.start, leaseYearCash, leaseTaxable, balloon);
+  var loan = simulate(i, i.start, loanYearCash, i.salary, 0);
+  var cash = simulate(i, cashStart, cashYearCash, i.salary, 0);
+  // Baseline: same salary, same tax, same account, no car at all.
+  var noCar = simulate(i, i.start, loanTakeHome, i.salary, 0);
+
+  var years = lease.years.map(function (l, k) {
+    return { year: l.year, leaseBalance: l.balance, loanBalance: loan.years[k].balance, cashBalance: cash.years[k].balance };
+  });
   return {
-    n: n, financed: financed, balloon: balloon,
-    leaseMonthly: leaseMonthly, leasePretaxYear: leasePretaxYear, leaseTax: leaseTax,
-    leaseYearCash: leaseYearCash, leaseBeforeBalloon: leaseBeforeBalloon, leaseEnd: leaseEnd,
+    n: n, duty: duty, upfront: upfront, gstCredit: gstCredit, financed: financed, residual: residual, balloon: balloon,
+    leaseMonthly: leaseMonthly, leasePretaxYear: leasePretaxYear, leaseTax: leaseTax, leaseYearCash: leaseYearCash,
     loanMonthly: loanMonthly, loanTax: loanTax, loanTakeHome: loanTakeHome, loanYearCash: loanYearCash,
-    loanEnd: loanEnd, years: years, diff: leaseEnd - loanEnd,
-    cashTax: cashTax, cashYearCash: cashYearCash, cashStart: cashStart, cashEnd: cashEnd,
-    noCarEnd: noCarEnd, leaseCost: noCarEnd - leaseEnd, loanCost: noCarEnd - loanEnd, cashCost: noCarEnd - cashEnd,
+    cashTax: loanTax, cashYearCash: cashYearCash, cashStart: cashStart,
+    lease: lease, loan: loan, cash: cash, noCar: noCar, years: years,
+    leaseEnd: lease.end, loanEnd: loan.end, cashEnd: cash.end, noCarEnd: noCar.end,
+    leaseCost: noCar.end - lease.end, loanCost: noCar.end - loan.end, cashCost: noCar.end - cash.end,
     leaseTotalPaid: leaseMonthly * n + i.fee * i.years + balloon + (leaseRunningPre + leaseRunningPost) * i.years,
     loanTotalPaid: loanMonthly * n + runningFull * i.years,
+    cashTotalPaid: upfront + runningFull * i.years,
     runningFull: runningFull, leaseRunningPre: leaseRunningPre, leaseRunningPost: leaseRunningPost,
     leaseRunningYear: leaseRunningPre + leaseRunningPost,
     leaseTaxSavingYear: loanTax.total - leaseTax.total
   };
 }
 
+// Stamp duty on a new battery electric passenger car, from each revenue office's published rules.
+// The rules are not checked against 2026-27 changes, so the page shows the formula next to the result.
+function per(v, step, rate) { return Math.ceil(v / step) * rate; }
+var DUTY = {
+  NSW: { text: '$3 per $100 up to $45,000, then $1,350 + $5 per $100 above',
+    fn: function (v) { return v <= 45000 ? per(v, 100, 3) : 1350 + per(v - 45000, 100, 5); } },
+  VIC: { text: '$8.40 per $200 (4.2%) for a low emission car up to the fuel-efficient LCT threshold',
+    fn: function (v) { return per(v, 200, 8.4); } },
+  QLD: { text: 'Electric car: $2 per $100 up to $100,000, then $4 per $100',
+    fn: function (v) { return v <= 100000 ? per(v, 100, 2) : 2000 + per(v - 100000, 100, 4); } },
+  SA: { text: '$60 + $4 per $100 above $3,000 (lower rates under $3,000)',
+    fn: function (v) {
+      if (v <= 1000) return Math.max(5, per(v, 100, 1));
+      if (v <= 2000) return 10 + per(v - 1000, 100, 2);
+      if (v <= 3000) return 30 + per(v - 2000, 100, 3);
+      return 60 + per(v - 3000, 100, 4);
+    } },
+  WA: { text: '2.75% up to $25,000, a rate rising to 6.5% between $25,000 and $50,000, 6.5% above',
+    fn: function (v) {
+      if (v <= 25000) return v * 0.0275;
+      if (v <= 50000) return v * Math.round((2.75 + (v - 25000) / 6666.66) * 100) / 10000;
+      return v * 0.065;
+    } },
+  TAS: { text: '$3 per $100 up to $35,000, $1,050 + $11 per $100 to $40,000, then $4 per $100 on the whole price',
+    fn: function (v) {
+      if (v <= 600) return 20;
+      if (v <= 35000) return per(v, 100, 3);
+      if (v <= 40000) return 1050 + per(v - 35000, 100, 11);
+      return per(v, 100, 4);
+    } },
+  ACT: { text: 'Zero emission car: exempt', fn: function () { return 0; } },
+  NT: { text: '3% of the price', fn: function (v) { return v * 0.03; } }
+};
+function stampDuty(state, price) { return Math.max(0, DUTY[state].fn(Math.max(price, 0))); }
 
-
-var ids = ['salary','price','years','leaseRate','balloonPct','fee','loanRate','start','rego','insurance','service','charging'];
+var ids = ['salary','price','years','leaseRate','balloonPct','fee','loanRate','start','accountRate','rego','insurance','service','charging'];
 function $(id) { return document.getElementById(id); }
 function num(id) { var v = parseFloat($(id).value); return isFinite(v) ? v : 0; }
 function usd(x, cents) {
@@ -330,21 +419,33 @@ function head(label) { return '<tr class="head"><td colspan="4">' + label + '</t
 function tierCell(r) {
   return usd(r.tax, true) + '<small>on ' + usd(r.inBand, true) + ' at ' + pct(r.rate) + '</small>';
 }
+function tierLabel(b) {
+  return b.to === Infinity ? usd(b.from + 1) + ' and over' : usd(b.from === 0 ? 0 : b.from + 1) + ' to ' + usd(b.to);
+}
 function readInputs() {
   var o = {};
   ids.forEach(function (id) { o[id] = num(id); });
   o.years = Math.max(1, Math.min(5, Math.round(o.years)));
   o.chargingInLease = $('chargingInLease').checked;
+  o.state = $('state').value;
+  o.account = $('account').value;
   return o;
 }
 function render() {
   var i = readInputs();
   var r = calc(i);
+  var savings = i.account === 'savings';
 
+  $('dutyLabel').textContent = 'Stamp duty in ' + i.state;
+  $('pDuty').textContent = usd(r.duty, true);
+  $('pGst').textContent = usd(r.gstCredit, true);
+  $('pFinanced').textContent = usd(r.financed, true);
   $('pLease').textContent = usd(r.leaseMonthly, true);
+  $('pResidual').textContent = usd(r.residual, true);
   $('pBalloon').textContent = usd(r.balloon, true);
   $('pLoan').textContent = usd(r.loanMonthly, true);
-  $('pCash').textContent = usd(i.price, true);
+  $('pBorrowed').textContent = usd(r.upfront, true);
+  $('pCash').textContent = usd(r.upfront, true);
   $('pRunLease').textContent = usd(r.leaseRunningYear, true);
   $('pRunLoan').textContent = usd(r.runningFull, true);
   $('pRunCash').textContent = usd(r.runningFull, true);
@@ -357,22 +458,26 @@ function render() {
     var gap = ends[k] - best;
     $('s' + k).textContent = gap >= -0.5 ? 'Best of the three' : usd(gap) + ' compared with the highest';
   });
+  $('balNote').textContent = 'In all three cases you own the car at the end. Car resale value is not included. The balance earns ' +
+    i.accountRate + '% a year, ' + (savings ? 'taxed as savings interest.' : 'tax free as an offset against the mortgage.') +
+    ' A balance below zero costs the same rate.';
 
   var yrs = i.years;
-  var taxOf = { Lease: r.leaseTax, Loan: r.loanTax, Cash: r.cashTax };
-  var lowestTax = Math.min(r.leaseTax.total, r.loanTax.total, r.cashTax.total) * yrs;
-  $('taxIntro').textContent = 'Each yearly figure multiplied by ' + yrs + ' years. Salary is flat, so every year is taxed the same.';
+  var taxOf = { Lease: r.lease.tax, Loan: r.loan.tax, Cash: r.cash.tax };
+  var lowestTax = Math.min(r.lease.tax.total, r.loan.tax.total, r.cash.tax.total);
+  $('taxIntro').textContent = 'Sum of ' + yrs + ' years. ' + (savings
+    ? 'Savings interest is added to taxable income, so the tax changes from year to year.'
+    : 'Salary is flat and offset interest is tax free, so every year is taxed the same.');
   ['Lease', 'Loan', 'Cash'].forEach(function (k) {
-    var t = taxOf[k], total = t.total * yrs;
+    var t = taxOf[k], total = t.total;
     $('x' + k).textContent = usd(total);
     var extra = total <= lowestTax + 0.5 ? 'Lowest tax' : '+' + usd(total - lowestTax) + ' compared with the lowest';
     $('xs' + k).textContent = pct(total / (i.salary * yrs)) + ' of gross pay. ' + extra;
     var h = '';
     t.rows.forEach(function (b) {
-      var lab = b.to === Infinity ? usd(b.from + 1) + ' and over' : usd(b.from === 0 ? 0 : b.from + 1) + ' to ' + usd(b.to);
-      h += '<div class="tier"><span>' + pct(b.rate) + ' tier<small>' + lab + ': ' + usd(b.inBand * yrs) + ' taxed</small></span><b>' + usd(b.tax * yrs) + '</b></div>';
+      h += '<div class="tier"><span>' + pct(b.rate) + ' tier<small>' + tierLabel(b) + ': ' + usd(b.inBand) + ' taxed</small></span><b>' + usd(b.tax) + '</b></div>';
     });
-    h += '<div class="tier"><span>Medicare levy 2%<small>On ' + usd(t.taxable * yrs) + ' taxable income</small></span><b>' + usd(t.medicare * yrs) + '</b></div>';
+    h += '<div class="tier"><span>Medicare levy 2%<small>On ' + usd(t.taxable) + ' taxable income</small></span><b>' + usd(t.medicare) + '</b></div>';
     h += '<div class="tier sum"><span>Total tax</span><b>' + usd(total) + '</b></div>';
     $('t' + k).innerHTML = h;
   });
@@ -383,33 +488,35 @@ function render() {
     $('c' + k).textContent = usd(costs[k]);
     $('d' + k).textContent = costs[k] <= cheapest + 0.5 ? 'Lowest cost' : '+' + usd(costs[k] - cheapest) + ' compared with the lowest';
   });
-  $('noCar').textContent = 'With no car the account would hold ' + usd(r.noCarEnd) + ' after ' + r.n / 12 + ' years (starting balance plus take-home pay on ' + usd(i.salary) + ' a year).';
+  $('noCar').textContent = 'With no car the account would hold ' + usd(r.noCarEnd) + ' after ' + yrs +
+    ' years: the starting balance, take-home pay on ' + usd(i.salary) + ' a year, and ' + usd(r.noCar.interest - r.noCar.interestTax) + ' interest after tax.';
 
   var L = r.leaseTax, N = r.loanTax, C = r.cashTax;
   var w = '';
   w += head('Pay');
   w += row('Gross salary', usd(i.salary, true), usd(i.salary, true), usd(i.salary, true));
   w += row('Lease payments, fees and running costs, pre-tax', '-' + usd(r.leasePretaxYear, true), '-', '-', 'sub');
-  w += row('Taxable income', usd(L.taxable, true), usd(N.taxable, true), usd(C.taxable, true), 'total');
-  w += head('Income tax by tier, 2026-27');
+  w += row('Taxable income from salary', usd(L.taxable, true), usd(N.taxable, true), usd(C.taxable, true), 'total');
+  w += head('Income tax on salary by tier, 2026-27');
   for (var k = 0; k < L.rows.length; k++) {
-    var lab = L.rows[k].to === Infinity ? usd(L.rows[k].from + 1) + ' and over' : usd(L.rows[k].from === 0 ? 0 : L.rows[k].from + 1) + ' to ' + usd(L.rows[k].to);
-    w += row(lab, tierCell(L.rows[k]), tierCell(N.rows[k]), tierCell(C.rows[k]));
+    w += row(tierLabel(L.rows[k]), tierCell(L.rows[k]), tierCell(N.rows[k]), tierCell(C.rows[k]));
   }
   w += row('Income tax', usd(L.incomeTax, true), usd(N.incomeTax, true), usd(C.incomeTax, true), 'sub');
   w += row('Medicare levy, 2%', usd(L.medicare, true), usd(N.medicare, true), usd(C.medicare, true), 'sub');
-  w += row('Total tax', usd(L.total, true), usd(N.total, true), usd(C.total, true), 'total');
+  w += row('Total tax on salary', usd(L.total, true), usd(N.total, true), usd(C.total, true), 'total');
   w += head('What is left');
   w += row('Take-home pay', usd(i.salary - r.leasePretaxYear - L.total, true), usd(r.loanTakeHome, true), usd(r.loanTakeHome, true));
   w += row('Loan repayments, after tax', '-', '-' + usd(r.loanMonthly * 12, true), '-', 'sub');
   w += row('Running costs paid from take-home pay', r.leaseRunningPost > 0 ? '-' + usd(r.leaseRunningPost, true) : '-', '-' + usd(r.runningFull, true), '-' + usd(r.runningFull, true), 'sub');
-  w += row('Cash added to the account per year', usd(r.leaseYearCash, true), usd(r.loanYearCash, true), usd(r.cashYearCash, true), 'total');
+  w += row('Cash added to the account per year, before interest', usd(r.leaseYearCash, true), usd(r.loanYearCash, true), usd(r.cashYearCash, true), 'total');
   w += head('Over the whole term');
-  w += row('Paid up front', '-', '-', usd(i.price, true), 'sub');
-  w += row('Balloon paid at the end', usd(r.balloon, true), '-', '-', 'sub');
+  w += row('Paid up front, price and stamp duty', '-', '-', usd(r.upfront, true), 'sub');
+  w += row('Balloon paid at the end, with GST', usd(r.balloon, true), '-', '-', 'sub');
   w += row('Tax saved per year compared with the loan', usd(r.leaseTaxSavingYear, true), '-', '-', 'sub');
   w += row('Running costs over the term', usd(r.leaseRunningYear * i.years, true), usd(r.runningFull * i.years, true), usd(r.runningFull * i.years, true), 'sub');
-  w += row('Total paid for the car and running it, before tax savings', usd(r.leaseTotalPaid, true), usd(r.loanTotalPaid, true), usd(i.price + r.runningFull * i.years, true), 'total');
+  w += row('Total paid for the car and running it, before tax savings', usd(r.leaseTotalPaid, true), usd(r.loanTotalPaid, true), usd(r.cashTotalPaid, true), 'total');
+  w += row('Interest on the account', usd(r.lease.interest, true), usd(r.loan.interest, true), usd(r.cash.interest, true), 'sub');
+  w += row('Tax on that interest', savings ? usd(r.lease.interestTax, true) : 'tax free', savings ? usd(r.loan.interestTax, true) : 'tax free', savings ? usd(r.cash.interestTax, true) : 'tax free', 'sub');
   $('work').innerHTML = w;
 
   var b = row('Start', usd(i.start), usd(i.start), usd(r.cashStart), 'sub');
@@ -421,21 +528,23 @@ function render() {
   $('bal').innerHTML = b;
 
   $('formula').textContent =
-    'Financed amount = price / 1.10 = ' + usd(i.price, true) + ' / 1.10 = ' + usd(r.financed, true) + '\n' +
-    'Balloon = price x ' + i.balloonPct + '% = ' + usd(r.balloon, true) + '\n' +
+    'Stamp duty, ' + i.state + ': ' + DUTY[i.state].text + ' = ' + usd(r.duty, true) + '\n' +
+    'GST credit = min(price / 11, car limit / 11) = min(' + usd(i.price / 11, true) + ', ' + usd(CAR_LIMIT / 11, true) + ') = ' + usd(r.gstCredit, true) + '\n' +
+    'Financed = price - GST credit + stamp duty = ' + usd(i.price, true) + ' - ' + usd(r.gstCredit, true) + ' + ' + usd(r.duty, true) + ' = ' + usd(r.financed, true) + '\n' +
+    'Residual = financed x ' + i.balloonPct + '% = ' + usd(r.residual, true) + ', balloon with GST = residual x 1.10 = ' + usd(r.balloon, true) + '\n' +
     'r = ' + i.leaseRate + '% / 12 = ' + (i.leaseRate / 12).toFixed(4) + '% per month, n = ' + r.n + ' months\n' +
-    'Payment = (Financed - Balloon / (1+r)^n) x r / (1 - (1+r)^-n)\n' +
-    '        = ' + usd(r.leaseMonthly, true) + ' per month';
+    'Payment = (Financed - Residual / (1+r)^n) x r / (1 - (1+r)^-n)\n' +
+    '        = ' + usd(r.leaseMonthly, true) + ' per month, paid at the end of each month';
 
   var msgs = [];
-  if (i.price > 91661) msgs.push('The price is above the luxury car tax threshold for fuel-efficient vehicles (about $91,661). The FBT exemption does not apply, so the lease result is not valid.');
+  if (i.price > LCT_FUEL_EFFICIENT) msgs.push('The price is above the luxury car tax threshold for fuel-efficient vehicles ($91,661 for 2026-27). The FBT exemption does not apply, so the lease result is not valid.');
   if (i.balloonPct < RESIDUAL[i.years] - 0.005) msgs.push('The ATO minimum balloon for a ' + i.years + '-year lease is ' + RESIDUAL[i.years] + '%. A lower value is not accepted by lenders.');
   var flag = $('flag');
   if (msgs.length) { flag.hidden = false; flag.textContent = msgs.join(' '); } else { flag.hidden = true; }
 }
 
 ids.forEach(function (id) { $(id).addEventListener('input', render); });
-$('chargingInLease').addEventListener('change', render);
+['chargingInLease', 'state', 'account'].forEach(function (id) { $(id).addEventListener('change', render); });
 $('years').addEventListener('change', function () {
   $('balloonPct').value = RESIDUAL[parseInt($('years').value, 10)];
   render();
