@@ -1,0 +1,315 @@
+<title>Калькулятор Novated Lease</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: verdict strip on top, inputs in grouped grid, breakdown table with two columns (loan vs lease) below. */
+:root {
+  --bg: #f3f5f7;
+  --surface: #ffffff;
+  --fg: #16202a;
+  --muted: #5a6673;
+  --line: #d9dfe5;
+  --loan: #2f5d8a;
+  --lease: #0f7a5c;
+  --lease-soft: #e2f3ed;
+  --loan-soft: #e4edf6;
+  --warn: #a4531a;
+  --warn-soft: #fbece0;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f161d; --surface: #17212b; --fg: #e6ebf0; --muted: #98a5b2; --line: #2b3946;
+    --loan: #7fb0e0; --lease: #4fd1a5; --lease-soft: #123329; --loan-soft: #14283a;
+    --warn: #f0a266; --warn-soft: #3a2616; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f161d; --surface: #17212b; --fg: #e6ebf0; --muted: #98a5b2; --line: #2b3946;
+  --loan: #7fb0e0; --lease: #4fd1a5; --lease-soft: #123329; --loan-soft: #14283a;
+  --warn: #f0a266; --warn-soft: #3a2616; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1 { font-size: 1.5rem; line-height: 1.2; margin: 0; text-wrap: balance; }
+h2 { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
+.sub { color: var(--muted); margin: 4px 0 0; max-width: 65ch; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+.verdict { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 16px; grid-template-columns: 1.2fr 1fr 1fr; }
+.verdict > div { min-width: 0; }
+.big { font-family: var(--font-num); font-size: 1.9rem; font-weight: 500; line-height: 1.15; overflow-wrap: anywhere; }
+.big.pos { color: var(--lease); }
+.big.neg { color: var(--warn); }
+.lbl { font-size: 0.8rem; color: var(--muted); }
+.side { border-left: 1px solid var(--line); padding-left: 16px; }
+.side .big { font-size: 1.35rem; }
+.side.loan .big { color: var(--loan); }
+.side.lease .big { color: var(--lease); }
+
+.inputs { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.group { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.field { display: grid; grid-template-columns: 1fr 112px; gap: 8px; align-items: center; margin-bottom: 10px; }
+.field:last-child { margin-bottom: 0; }
+.field label { font-size: 0.9rem; min-width: 0; }
+.field small { display: block; color: var(--muted); font-size: 0.75rem; line-height: 1.3; }
+input[type="number"], select {
+  width: 100%; font: inherit; font-family: var(--font-num); font-size: 0.9rem; text-align: right;
+  padding: 7px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg);
+}
+select { text-align: left; }
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--lease); outline-offset: 1px; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 0.9rem; margin-top: 4px; }
+.check input { margin-top: 4px; accent-color: var(--lease); }
+
+.tablewrap { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 520px; }
+th, td { padding: 8px 6px; text-align: right; border-bottom: 1px solid var(--line); font-size: 0.9rem; }
+th:first-child, td:first-child { text-align: left; font-family: var(--font-body); }
+th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+th.loan { color: var(--loan); } th.lease { color: var(--lease); }
+td.n { font-family: var(--font-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.total td { font-weight: 600; border-bottom: 2px solid var(--fg); }
+tr.minus td.n { color: var(--lease); }
+tr.sub td { color: var(--muted); font-size: 0.82rem; }
+.notes { color: var(--muted); font-size: 0.85rem; max-width: 70ch; }
+.notes ul { margin: 6px 0 0; padding-left: 18px; }
+.notes li { margin-bottom: 4px; }
+.flag { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 10px 12px; font-size: 0.85rem; }
+.flag[hidden] { display: none; }
+
+@media (max-width: 720px) {
+  .verdict { grid-template-columns: 1fr; }
+  .side { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 12px; }
+  .big { font-size: 1.65rem; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Кредит или novated lease: сколько заплатите за срок</h1>
+    <p class="sub">Электрокар, Новый Южный Уэльс. Цифры в австралийских долларах. Все поля можно менять, расчёт обновляется сразу. Значения по умолчанию взяты как типичные, а не из реальной котировки.</p>
+  </header>
+
+  <section class="verdict" aria-live="polite">
+    <div>
+      <div class="lbl" id="vlabel">Лизинг дешевле кредита на</div>
+      <div class="big pos" id="vmain">$0</div>
+      <div class="lbl" id="vmort" style="margin-top:6px"></div>
+    </div>
+    <div class="side loan">
+      <div class="lbl">Кредит, чистая стоимость</div>
+      <div class="big" id="vloan">$0</div>
+      <div class="lbl" id="vloan2"></div>
+    </div>
+    <div class="side lease">
+      <div class="lbl">Лизинг, чистая стоимость</div>
+      <div class="big" id="vlease">$0</div>
+      <div class="lbl" id="vlease2"></div>
+    </div>
+  </section>
+
+  <div class="flag" id="flag" hidden></div>
+
+  <section>
+    <h2>Параметры</h2>
+    <div class="inputs">
+      <div class="group">
+        <div class="field"><label for="salary">Зарплата в год, брутто</label><input id="salary" type="number" inputmode="decimal" step="1000" value="200000"></div>
+        <div class="field"><label for="price">Цена машины<small>с GST, под ключ</small></label><input id="price" type="number" inputmode="decimal" step="500" value="50000"></div>
+        <div class="field"><label for="years">Срок, лет</label>
+          <select id="years"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option></select></div>
+        <div class="field"><label for="resale">Цена машины в конце<small>вычитается из обоих вариантов</small></label><input id="resale" type="number" inputmode="decimal" step="500" value="17500"></div>
+      </div>
+
+      <div class="group">
+        <h2>Кредит</h2>
+        <div class="field"><label for="loanRate">Ставка, % годовых</label><input id="loanRate" type="number" inputmode="decimal" step="0.01" value="0.09"></div>
+        <div class="field"><label for="mortRate">Ставка ипотеки, %<small>куда уйдут освободившиеся деньги</small></label><input id="mortRate" type="number" inputmode="decimal" step="0.05" value="6"></div>
+      </div>
+
+      <div class="group">
+        <h2>Novated lease</h2>
+        <div class="field"><label for="leaseRate">Ставка, % годовых</label><input id="leaseRate" type="number" inputmode="decimal" step="0.05" value="7.5"></div>
+        <div class="field"><label for="residualPct">Остаток (balloon), %<small>минимум по ATO зависит от срока</small></label><input id="residualPct" type="number" inputmode="decimal" step="0.01" value="28.13"></div>
+        <div class="field"><label for="fee">Комиссия провайдера в год</label><input id="fee" type="number" inputmode="decimal" step="10" value="180"></div>
+        <div class="field"><label for="packYears">Лет, когда вычет работает<small>меньше срока, если уйдёте с работы без переноса</small></label><input id="packYears" type="number" inputmode="decimal" step="1" min="0" max="5" value="5"></div>
+      </div>
+
+      <div class="group">
+        <h2>Расходы в год</h2>
+        <div class="field"><label for="rego">Rego и CTP</label><input id="rego" type="number" inputmode="decimal" step="50" value="1000"></div>
+        <div class="field"><label for="insurance">Страховка<small>с GST</small></label><input id="insurance" type="number" inputmode="decimal" step="50" value="1800"></div>
+        <div class="field"><label for="service">Сервис и шины<small>с GST</small></label><input id="service" type="number" inputmode="decimal" step="50" value="600"></div>
+        <div class="field"><label for="charging">Зарядка<small>15 000 км, $0,30 за кВт·ч</small></label><input id="charging" type="number" inputmode="decimal" step="50" value="765"></div>
+        <label class="check"><input id="chargingInLease" type="checkbox" checked><span>Зарядка идёт через лизинг до налога</span></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="tablewrap">
+    <h2>Из чего складывается сумма</h2>
+    <table>
+      <thead><tr><th>Статья</th><th class="loan">Кредит</th><th class="lease">Лизинг</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </section>
+
+  <section class="notes">
+    <h2>Как считается</h2>
+    <ul>
+      <li>Налог считается по ставкам резидента 2026-27 плюс Medicare 2%. Предельная ставка при вашей зарплате: <span id="marg" class="num"></span>.</li>
+      <li>В лизинге финансируется цена без GST. GST со страховки и сервиса тоже возвращается.</li>
+      <li>Остаток (balloon) платится в конце срока из своих денег и в вычет не идёт.</li>
+      <li>Эффект ипотеки: ежемесячная разница между кредитом и лизингом, направленная в ипотеку, экономит проценты по указанной ставке.</li>
+      <li>Не учтены: гос. сборы за пробег для EV, влияние на super, штрафы за досрочное закрытие, налог на машину при продаже.</li>
+      <li>Я не налоговый консультант. Перед подписанием сверьте цифры с реальной котировкой и бухгалтером.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+function pmt(rateM, n, pv, fv) {
+  fv = fv || 0;
+  if (n <= 0) return 0;
+  if (rateM === 0) return (pv - fv) / n;
+  var g = Math.pow(1 + rateM, -n);
+  return (pv - fv * g) * rateM / (1 - g);
+}
+
+// Resident rates 2026-27 (assumed), plus 2% Medicare levy.
+function incomeTax(x) {
+  var b = [[18200, 0], [45000, 0.15], [135000, 0.30], [190000, 0.37], [Infinity, 0.45]];
+  var tax = 0, prev = 0;
+  for (var k = 0; k < b.length; k++) {
+    var top = b[k][0], rate = b[k][1];
+    if (x > prev) tax += (Math.min(x, top) - prev) * rate;
+    prev = top;
+  }
+  return tax + Math.max(x, 0) * 0.02;
+}
+
+function calc(i) {
+  var years = i.years, n = years * 12;
+  var running = i.rego + i.insurance + i.service + i.charging; // per year, loan option
+  var loanMonthly = pmt(i.loanRate / 1200, n, i.price);
+  var loanInterest = loanMonthly * n - i.price;
+  var loanRunning = running * years;
+  var loanCash = i.price + loanInterest + loanRunning;
+
+  var financed = i.price / 1.1;
+  var balloon = i.price * i.residualPct / 100;
+  var leaseMonthly = pmt(i.leaseRate / 1200, n, financed, balloon);
+  var leasePayments = leaseMonthly * n;
+  var leaseInterest = leasePayments + balloon - financed;
+  var preTaxRunning = i.rego + (i.insurance + i.service) / 1.1 + (i.chargingInLease ? i.charging : 0);
+  var postTaxRunning = i.chargingInLease ? 0 : i.charging;
+  var feeTotal = i.fee * years;
+  var leaseRunning = (preTaxRunning + postTaxRunning) * years;
+  var leaseCash = leasePayments + feeTotal + leaseRunning + balloon;
+  var preTaxAnnual = leaseMonthly * 12 + preTaxRunning + i.fee;
+  var taxSavingYear = incomeTax(i.salary) - incomeTax(i.salary - preTaxAnnual);
+  var taxYears = Math.min(i.packYears, years);
+  var taxSaving = taxSavingYear * taxYears;
+  var leaseNet = leaseCash - taxSaving;
+  var loanNet = loanCash;
+
+  var freed = (loanCash - (leaseCash - balloon - taxSaving)) / n;
+  var m = i.mortRate / 1200;
+  var mortEffect = 0;
+  if (freed > 0) {
+    var fv = m === 0 ? freed * n : freed * (Math.pow(1 + m, n) - 1) / m;
+    mortEffect = fv - freed * n;
+  }
+  var diff = loanNet - leaseNet;
+  return {
+    loanMonthly: loanMonthly, loanInterest: loanInterest, loanRunning: loanRunning,
+    loanCash: loanCash, loanNet: loanNet,
+    financed: financed, balloon: balloon, leaseMonthly: leaseMonthly,
+    leasePayments: leasePayments, leaseInterest: leaseInterest, leaseRunning: leaseRunning,
+    feeTotal: feeTotal, leaseCash: leaseCash, taxSavingYear: taxSavingYear,
+    taxSaving: taxSaving, leaseNet: leaseNet, preTaxAnnual: preTaxAnnual,
+    marginal: incomeTax(i.salary + 1) - incomeTax(i.salary),
+    freed: freed, mortEffect: mortEffect, diff: diff, diffMort: diff + mortEffect,
+    loanAfterResale: loanNet - i.resale, leaseAfterResale: leaseNet - i.resale
+  };
+}
+
+
+
+var RESIDUAL = { 1: 65.63, 2: 56.25, 3: 46.88, 4: 37.5, 5: 28.13 };
+var ids = ['salary','price','years','resale','loanRate','mortRate','leaseRate','residualPct','fee','packYears','rego','insurance','service','charging'];
+
+function $(id) { return document.getElementById(id); }
+function num(id) { var v = parseFloat($(id).value); return isFinite(v) ? v : 0; }
+function usd(x) {
+  var s = Math.abs(Math.round(x)).toLocaleString('en-AU');
+  return (x < 0 ? '−$' : '$') + s;
+}
+function readInputs() {
+  var o = {};
+  ids.forEach(function (id) { o[id] = num(id); });
+  o.chargingInLease = $('chargingInLease').checked;
+  o.years = Math.max(1, Math.min(5, Math.round(o.years)));
+  o.packYears = Math.max(0, Math.min(o.years, o.packYears));
+  return o;
+}
+function row(label, a, b, cls) {
+  return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + label + '</td><td class="n">' + a + '</td><td class="n">' + b + '</td></tr>';
+}
+function render() {
+  var i = readInputs();
+  var r = calc(i);
+  var lease = r.diff >= 0;
+  $('vlabel').textContent = lease ? 'Лизинг дешевле кредита на' : 'Кредит дешевле лизинга на';
+  $('vmain').textContent = usd(Math.abs(r.diff));
+  $('vmain').className = 'big ' + (lease ? 'pos' : 'neg');
+  var mortTxt = r.mortEffect > 0
+    ? 'С учётом ипотеки: ' + (r.diffMort >= 0 ? 'лизинг выгоднее на ' : 'кредит выгоднее на ') + usd(Math.abs(r.diffMort))
+    : '';
+  $('vmort').textContent = mortTxt;
+  $('vloan').textContent = usd(r.loanNet);
+  $('vlease').textContent = usd(r.leaseNet);
+  $('vloan2').textContent = 'После продажи машины: ' + usd(r.loanAfterResale);
+  $('vlease2').textContent = 'После продажи машины: ' + usd(r.leaseAfterResale);
+  $('marg').textContent = Math.round(r.marginal * 100) + '%';
+
+  var rows = '';
+  rows += row('Платежи за машину', usd(i.price), usd(r.leasePayments));
+  rows += row('Проценты внутри этой суммы', usd(r.loanInterest), usd(r.leaseInterest), 'sub');
+  rows += row('Остаток (balloon) в конце', '—', usd(r.balloon));
+  rows += row('Комиссия провайдера', '—', usd(r.feeTotal));
+  rows += row('Rego, CTP, страховка, сервис, зарядка', usd(r.loanRunning), usd(r.leaseRunning));
+  rows += row('Итого до налога', usd(r.loanCash), usd(r.leaseCash), 'total');
+  rows += row('Налоговая экономия (' + usd(r.taxSavingYear) + ' в год)', '—', '−' + usd(r.taxSaving).replace('$', '$'), 'minus');
+  rows += row('Чистая стоимость за ' + i.years + ' лет', usd(r.loanNet), usd(r.leaseNet), 'total');
+  rows += row('Минус цена машины в конце', '−' + usd(i.resale), '−' + usd(i.resale), 'sub');
+  rows += row('Итого после продажи', usd(r.loanAfterResale), usd(r.leaseAfterResale), 'total');
+  rows += row('Платёж в месяц (только машина)', usd(r.loanMonthly), usd(r.leaseMonthly), 'sub');
+  $('rows').innerHTML = rows;
+
+  var flag = $('flag');
+  var msgs = [];
+  if (i.packYears < i.years) msgs.push('Вычет считается только за ' + i.packYears + ' из ' + i.years + ' лет. Остальные платежи идут из налогооблагаемого дохода.');
+  if (i.loanRate < 1) msgs.push('Ставка кредита ниже 1% встречается редко. Проверьте, что она действительно в предложении.');
+  if (i.price > 91000) msgs.push('Цена выше порога LCT (около $91 тыс.). FBT-освобождение для такой машины не действует, расчёт лизинга будет неверным.');
+  if (msgs.length) { flag.hidden = false; flag.textContent = msgs.join(' '); } else { flag.hidden = true; }
+}
+
+ids.forEach(function (id) { $(id).addEventListener('input', render); });
+$('chargingInLease').addEventListener('change', render);
+$('years').addEventListener('change', function () {
+  var y = parseInt($('years').value, 10);
+  $('residualPct').value = RESIDUAL[y];
+  $('packYears').value = y;
+  render();
+});
+render();
+</script>
