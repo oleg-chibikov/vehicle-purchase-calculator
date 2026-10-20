@@ -72,8 +72,8 @@ function WorkRows({ i, r }: { i: Inputs; r: Result }) {
       <Row cls="sub" label="Loan repayments, after tax" cells={['-', '-' + usd(r.loanMonthly * 12), '-']} />
       {r.ecm > 0 && <Row cls="sub" label={<>Post-tax contribution to the lease, with GST<Info src={['statutory', 'ecmGst']} /></>} cells={['-' + usd(r.ecm), '-', '-']} />}
       <Row cls="sub" label="Running costs paid from take-home pay" cells={[r.leaseRunningPost > 0 ? '-' + usd(r.leaseRunningPost) : '-', '-' + usd(r.runningFull), '-' + usd(r.runningFull)]} />
-      <Row cls="total" label="Take-home pay left after the car" cells={[usd(r.leaseYearCash), usd(r.loanYearCash), usd(r.cashYearCash)]} />
-      <Row cls="sub" label="Change to the account per year, before interest, compared with no car" cells={[usd(r.flow.lease), usd(r.flow.loan), usd(r.flow.cash)]} />
+      <Row cls="total" label="Take-home pay left after the car, paid into the account per year" cells={[usd(r.flow.lease), usd(r.flow.loan), usd(r.flow.cash)]} />
+      <Row cls="sub" label="With no car, all take-home pay goes in" cells={[usd(r.takeHome), usd(r.takeHome), usd(r.takeHome)]} />
       <Head>Over the whole term</Head>
       <Row cls="sub" label="Paid up front, price and stamp duty" cells={['-', '-', usd(r.upfront)]} />
       <Row cls="sub" label={<>Balloon paid at the end, with GST<Info src={['residual', 'gst']} /></>} cells={[usd(r.balloon), '-', '-']} />

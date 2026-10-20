@@ -10,16 +10,22 @@ function costs(changes: Partial<FormValues> = {}) {
 
 describe('calc', () => {
   it('gives the known totals for the defaults', () => {
-    expect(costs()).toEqual([56268, 98949, 93817]);
+    expect(costs()).toEqual([52960, 91546, 86141]);
   });
 
-  it('ignores cash in the offset while the balance stays below the mortgage owing', () => {
-    expect(costs({ start: '100000' })).toEqual([56268, 98949, 93817]);
+  it('pays all take-home pay into the account each month', () => {
+    const r = calc(readInputs({ ...defaultValues(), startDate: '2026-10-20', start: '0', accountRate: '0' }));
+    expect(r.noCar.end).toBeCloseTo(r.takeHome * r.n / 12, 6);
+    expect(r.account.loan.end).toBeCloseTo(r.flow.loan * r.n / 12, 6);
+  });
+
+  it('costs less once pay takes the offset past the mortgage owing sooner', () => {
+    expect(costs({ start: '100000' })).toEqual([51951, 88981, 82837]);
   });
 
   it('loses no offset interest while the balance stays above the mortgage owing', () => {
     expect(costs({ start: '600000', mortgage: '500000' })).toEqual([50428, 85093, 72425]);
-    expect(costs({ start: '600000', mortgage: '570000' })).toEqual([50428, 85093, 72961]);
+    expect(costs({ start: '600000', mortgage: '570000' })).toEqual([50428, 85093, 72571]);
   });
 
   it('taxes savings interest', () => {

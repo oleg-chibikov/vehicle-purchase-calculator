@@ -67,13 +67,13 @@ export function calc(i: Inputs) {
   const cashYearCash = takeHome - runningFull;
   const cashStart = i.start - upfront;
 
-  // The account holds the cash today and what the car changes. Take-home pay with no car is the same in every option, so it stays out.
-  const flow: Record<Option, number> = { lease: leaseYearCash - takeHome, loan: loanYearCash - takeHome, cash: cashYearCash - takeHome };
+  // All take-home pay goes into the account once a month. Each option pays its car costs out of it first.
+  const flow: Record<Option, number> = { lease: leaseYearCash, loan: loanYearCash, cash: cashYearCash };
   const lease = simulate(i, i.start, flow.lease, leaseTaxable, balloon);
   const loan = simulate(i, i.start, flow.loan, i.salary, 0);
   const cash = simulate(i, cashStart, flow.cash, i.salary, 0);
   // Baseline: same salary, same tax, same account, no car at all.
-  const noCar = simulate(i, i.start, 0, i.salary, 0);
+  const noCar = simulate(i, i.start, takeHome, i.salary, 0);
 
   const running = runningFull * i.years;
   const gstSaved = gstCredit - residual * GST + (runningFull - leaseRunningPre - leaseRunningPost - ecmGst) * i.years;
@@ -123,7 +123,7 @@ export function taxOn(taxable: number): Tax {
   return { taxable: t, rows, incomeTax, medicare, total: incomeTax + medicare };
 }
 
-// Month by month: interest on the opening balance, then the month's car money in or out.
+// Month by month: interest on the opening balance, then the month's pay left after the car.
 // Savings interest is taxed at the end of each year. Offset interest is tax free.
 // A negative balance costs the same rate and gives no tax deduction.
 function simulate(i: Inputs, startBalance: number, yearCash: number, salaryTaxable: number, endPayment: number): Account {

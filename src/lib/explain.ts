@@ -17,7 +17,7 @@ export interface SplitLine { label: string; value: number; formula: string; src:
 export function costNote(i: Inputs, r: Result, now: string): Line[] {
   return [
     { text: 'Cost = the account with no car (' + usd(r.noCar.end) + ' at the end) minus the account with the car. You own the car in all three cases. Its resale value is not counted.' },
-    { text: 'The account holds the cash today and the money the car takes out or gives back. Salary and living costs are the same in every option, so they stay out.' },
+    { text: 'The account starts with the cash today. Each month all take-home pay goes in, less what the car costs that month. Living costs are not taken out.' },
     {
       text: i.account === 'savings'
         ? 'The account earns ' + i.accountRate + '% a year, taxed as savings interest.'
@@ -63,11 +63,11 @@ export function splitLines(i: Inputs, r: Result, k: Option): SplitLine[] {
 export function endFormula(i: Inputs, r: Result, k: Option): string {
   const s = r.account[k];
   const start = k === 'cash' ? 'cash today ' + usd(i.start, true) + ' - price and stamp duty ' + usd(r.upfront, true) : 'cash today ' + usd(i.start, true);
-  return start + ' + car money ' + usd(r.flow[k], true) + ' a year x ' + plural(i.years, 'year')
+  return start + ' + take-home pay left after the car ' + usd(r.flow[k], true) + ' a year x ' + plural(i.years, 'year')
     + (i.account === 'savings' ? ' + interest ' : ' + mortgage interest saved ') + usd(s.interest, true)
     + (s.interestTax ? ' - tax on it ' + usd(s.interestTax, true) : '')
     + (k === 'lease' ? ' - balloon ' + usd(r.balloon, true) : '') + ' = ' + usd(s.end, true)
-    + '. With no car the account ends at ' + usd(r.noCar.end, true) + '.';
+    + '. With no car, take-home pay ' + usd(r.takeHome, true) + ' a year goes in and the account ends at ' + usd(r.noCar.end, true) + '.';
 }
 
 export function formulaLines(i: Inputs, r: Result): Line[] {
