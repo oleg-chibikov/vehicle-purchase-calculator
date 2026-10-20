@@ -2,15 +2,16 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: inputs row, headline result, then every calculation step in order: lease payment, tax by tier, yearly balance. */
+/* Layout: three fixed columns (lease, loan, cash purchase). Row 1 parameters, row 2 account balance after the term, then the working below in the same three columns. */
 :root {
   --bg: #f3f5f7;
   --surface: #ffffff;
   --fg: #16202a;
   --muted: #5a6673;
   --line: #d9dfe5;
-  --loan: #2f5d8a;
   --lease: #0f7a5c;
+  --loan: #2f5d8a;
+  --cash: #8a5a14;
   --warn: #a4531a;
   --warn-soft: #fbece0;
   --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -19,12 +20,12 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0f161d; --surface: #17212b; --fg: #e6ebf0; --muted: #98a5b2; --line: #2b3946;
-    --loan: #7fb0e0; --lease: #4fd1a5; --warn: #f0a266; --warn-soft: #3a2616; color-scheme: dark;
+    --lease: #4fd1a5; --loan: #7fb0e0; --cash: #e0b25f; --warn: #f0a266; --warn-soft: #3a2616; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0f161d; --surface: #17212b; --fg: #e6ebf0; --muted: #98a5b2; --line: #2b3946;
-  --loan: #7fb0e0; --lease: #4fd1a5; --warn: #f0a266; --warn-soft: #3a2616; color-scheme: dark;
+  --lease: #4fd1a5; --loan: #7fb0e0; --cash: #e0b25f; --warn: #f0a266; --warn-soft: #3a2616; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body {
@@ -33,16 +34,15 @@ body {
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 20px 40px;
 }
-.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 h1 { font-size: 1.5rem; line-height: 1.2; margin: 0; text-wrap: balance; }
 h2 { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; font-weight: 600; }
 p { margin: 0 0 8px; }
 .sub { color: var(--muted); margin: 4px 0 0; max-width: 68ch; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
-.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
 
-.inputs { display: grid; gap: 12px 20px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-.field { display: grid; grid-template-columns: 1fr 112px; gap: 8px; align-items: center; }
+.common { display: grid; gap: 12px 20px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }
+.field { display: grid; grid-template-columns: 1fr 104px; gap: 8px; align-items: center; }
 .field label { font-size: 0.9rem; min-width: 0; }
 .field small { display: block; color: var(--muted); font-size: 0.75rem; line-height: 1.3; }
 input[type="number"], select {
@@ -52,112 +52,130 @@ input[type="number"], select {
 select { text-align: left; }
 input:focus-visible, select:focus-visible { outline: 2px solid var(--lease); outline-offset: 1px; }
 
-.result { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); }
-.result > div { min-width: 0; }
+.cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.col { min-width: 0; border-top: 4px solid var(--c); padding-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+.col.lease { --c: var(--lease); }
+.col.loan { --c: var(--loan); }
+.col.cash { --c: var(--cash); }
+.col h3 { margin: 0; font-size: 1.05rem; color: var(--c); }
+.col .desc { font-size: 0.82rem; color: var(--muted); margin: 0; }
+.derived { font-size: 0.85rem; display: flex; justify-content: space-between; gap: 8px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.derived b { font-family: var(--font-num); font-weight: 500; white-space: nowrap; }
+
 .lbl { font-size: 0.8rem; color: var(--muted); }
-.big { font-family: var(--font-num); font-size: 1.7rem; font-weight: 500; line-height: 1.2; overflow-wrap: anywhere; }
-.big.lease { color: var(--lease); }
-.big.loan { color: var(--loan); }
-.big.pos { color: var(--lease); }
-.big.neg { color: var(--warn); }
-.result > div + div { border-left: 1px solid var(--line); padding-left: 16px; }
+.big { font-family: var(--font-num); font-size: 1.7rem; font-weight: 500; line-height: 1.2; overflow-wrap: anywhere; color: var(--c); }
+.res { display: flex; flex-direction: column; gap: 2px; }
+.badge { display: inline-block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; background: var(--c); color: var(--surface); width: fit-content; }
+.badge[hidden] { display: none; }
 
 .scroll { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; min-width: 480px; }
-th, td { padding: 7px 6px; text-align: right; border-bottom: 1px solid var(--line); font-size: 0.88rem; }
-th:first-child, td:first-child { text-align: left; }
-th { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+table { width: 100%; border-collapse: collapse; min-width: 560px; }
+th, td { padding: 7px 6px; text-align: right; border-bottom: 1px solid var(--line); font-size: 0.88rem; vertical-align: top; }
+th:first-child, td:first-child { text-align: left; width: 34%; }
+th { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+th.lease { color: var(--lease); } th.loan { color: var(--loan); } th.cash { color: var(--cash); }
 td.n { font-family: var(--font-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td small { display: block; color: var(--muted); font-size: 0.72rem; font-family: var(--font-body); }
 tr.total td { font-weight: 600; border-bottom: 2px solid var(--fg); }
 tr.sub td { color: var(--muted); font-size: 0.82rem; }
-tr.pos td.n { color: var(--lease); }
-tr.neg td.n { color: var(--warn); }
-.two { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
-.formula { font-family: var(--font-num); font-size: 0.82rem; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; overflow-x: auto; white-space: pre; margin: 8px 0 12px; }
+tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; background: var(--bg); }
+.formula { font-family: var(--font-num); font-size: 0.82rem; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; overflow-x: auto; white-space: pre; margin: 8px 0 0; }
 .flag { background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 10px 12px; font-size: 0.85rem; }
 .flag[hidden] { display: none; }
-.notes { color: var(--muted); font-size: 0.85rem; max-width: 74ch; }
+.notes { color: var(--muted); font-size: 0.85rem; max-width: 76ch; }
 .notes ul { margin: 6px 0 0; padding-left: 18px; }
 .notes li { margin-bottom: 4px; }
 
-@media (max-width: 720px) {
-  .result { grid-template-columns: 1fr; }
-  .result > div + div { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 12px; }
-  .two { grid-template-columns: 1fr; }
+@media (max-width: 760px) {
+  .cols { grid-template-columns: 1fr; }
 }
 </style>
 
 <div class="wrap">
   <header>
     <h1>Vehicle Purchase Calculator</h1>
-    <p class="sub">Australia only. Shows how much money you have in your account at the end of the term if you buy an electric car through a novated lease, compared with a car loan. Running costs (insurance, rego, servicing, charging) are not included. Defaults are examples, not a quote.</p>
+    <p class="sub">Australia only. Compares three ways to pay for an electric car and shows how much money is in your account at the end of the term. Running costs (insurance, rego, servicing, charging) are not included. Defaults are examples, not a quote.</p>
   </header>
 
+  <div class="flag" id="flag" hidden></div>
+
   <section class="card">
-    <h2>Inputs</h2>
-    <div class="inputs">
+    <h2>Parameters</h2>
+    <div class="common">
       <div class="field"><label for="salary">Gross salary per year<small>Excluding super</small></label><input id="salary" type="number" inputmode="decimal" step="1000" value="200000"></div>
       <div class="field"><label for="price">Car price, drive-away<small>Including GST and on-road costs</small></label><input id="price" type="number" inputmode="decimal" step="500" value="50000"></div>
       <div class="field"><label for="years">Term, years</label>
         <select id="years"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5" selected>5</option></select></div>
-      <div class="field"><label for="leaseRate">Lease interest rate, % p.a.<small>Financier rate on your quote</small></label><input id="leaseRate" type="number" inputmode="decimal" step="0.05" value="7.5"></div>
-      <div class="field"><label for="balloonPct">Balloon (residual), %<small>ATO minimum for the term, editable</small></label><input id="balloonPct" type="number" inputmode="decimal" step="0.01" value="28.13"></div>
-      <div class="field"><label for="fee">Provider fees per year<small>Lease admin fees, pre-tax</small></label><input id="fee" type="number" inputmode="decimal" step="10" value="0"></div>
-      <div class="field"><label for="loanRate">Loan interest rate, % p.a.<small>For the comparison column</small></label><input id="loanRate" type="number" inputmode="decimal" step="0.01" value="0.09"></div>
       <div class="field"><label for="start">Starting balance<small>Cash in the account today</small></label><input id="start" type="number" inputmode="decimal" step="1000" value="0"></div>
     </div>
+
+    <div class="cols">
+      <div class="col lease">
+        <h3>Novated lease</h3>
+        <p class="desc">Payments come out of salary before tax. Balloon paid at the end.</p>
+        <div class="field"><label for="leaseRate">Interest rate, % p.a.<small>Financier rate on the quote</small></label><input id="leaseRate" type="number" inputmode="decimal" step="0.05" value="7.5"></div>
+        <div class="field"><label for="balloonPct">Balloon, %<small>ATO minimum for the term</small></label><input id="balloonPct" type="number" inputmode="decimal" step="0.01" value="28.13"></div>
+        <div class="field"><label for="fee">Provider fees per year<small>Pre-tax</small></label><input id="fee" type="number" inputmode="decimal" step="10" value="0"></div>
+        <div class="derived"><span>Monthly payment, pre-tax</span><b id="pLease"></b></div>
+        <div class="derived"><span>Balloon at the end</span><b id="pBalloon"></b></div>
+      </div>
+      <div class="col loan">
+        <h3>Car loan</h3>
+        <p class="desc">Repayments come out of pay after tax. Full price including GST is borrowed.</p>
+        <div class="field"><label for="loanRate">Interest rate, % p.a.</label><input id="loanRate" type="number" inputmode="decimal" step="0.01" value="0.09"></div>
+        <div class="derived"><span>Monthly repayment, after tax</span><b id="pLoan"></b></div>
+        <div class="derived"><span>Balloon at the end</span><b>none</b></div>
+      </div>
+      <div class="col cash">
+        <h3>Cash purchase</h3>
+        <p class="desc">The full price leaves the account on day one. No repayments.</p>
+        <div class="derived"><span>Paid on day one</span><b id="pCash"></b></div>
+        <div class="derived"><span>Monthly payment</span><b>none</b></div>
+      </div>
+    </div>
   </section>
 
-  <div class="flag" id="flag" hidden></div>
+  <section class="card" aria-live="polite">
+    <h2>Account balance after the term</h2>
+    <div class="cols">
+      <div class="col lease res"><span class="badge" id="bLease" hidden>Highest</span><div class="big" id="rLease"></div><div class="lbl" id="sLease"></div></div>
+      <div class="col loan res"><span class="badge" id="bLoan" hidden>Highest</span><div class="big" id="rLoan"></div><div class="lbl" id="sLoan"></div></div>
+      <div class="col cash res"><span class="badge" id="bCash" hidden>Highest</span><div class="big" id="rCash"></div><div class="lbl" id="sCash"></div></div>
+    </div>
+    <p class="lbl" style="margin-top:12px">In all three cases you own the car at the end. Car resale value is not included.</p>
+  </section>
 
-  <section class="card result" aria-live="polite">
-    <div>
-      <div class="lbl">Account balance after the lease term</div>
-      <div class="big lease" id="rLease">$0</div>
-      <div class="lbl" id="rLeaseSub"></div>
+  <section class="card" aria-live="polite">
+    <h2>Total cost of the car</h2>
+    <p class="lbl">Balance with no car at all, minus the balance in each case. Same salary, same tax rules.</p>
+    <div class="cols">
+      <div class="col lease res"><div class="big" id="cLease"></div><div class="lbl" id="dLease"></div></div>
+      <div class="col loan res"><div class="big" id="cLoan"></div><div class="lbl" id="dLoan"></div></div>
+      <div class="col cash res"><div class="big" id="cCash"></div><div class="lbl" id="dCash"></div></div>
     </div>
-    <div>
-      <div class="lbl">Account balance with a loan instead</div>
-      <div class="big loan" id="rLoan">$0</div>
-      <div class="lbl" id="rLoanSub"></div>
-    </div>
-    <div>
-      <div class="lbl" id="rDiffLabel">Lease vs loan</div>
-      <div class="big" id="rDiff">$0</div>
-      <div class="lbl">In both cases you own the car at the end.</div>
-    </div>
+    <p class="lbl" style="margin-top:12px" id="noCar"></p>
   </section>
 
   <section class="card">
-    <h2>Step 1. Lease payment</h2>
-    <p>A novated lease finances the car price without GST, because the employer claims the GST back. The monthly payment is set by the interest rate, the term and the balloon you pay at the end.</p>
+    <h2>How each number is worked out, per year</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Line</th><th class="lease">Novated lease</th><th class="loan">Car loan</th><th class="cash">Cash purchase</th></tr></thead>
+      <tbody id="work"></tbody>
+    </table></div>
+  </section>
+
+  <section class="card">
+    <h2>Account balance year by year</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>End of year</th><th class="lease">Novated lease</th><th class="loan">Car loan</th><th class="cash">Cash purchase</th></tr></thead>
+      <tbody id="bal"></tbody>
+    </table></div>
+  </section>
+
+  <section class="card">
+    <h2>Lease payment formula</h2>
+    <p>A novated lease finances the price without GST, because the employer claims the GST back. The payment depends on the interest rate, the term and the balloon.</p>
     <div class="formula" id="formula"></div>
-    <div class="scroll"><table><tbody id="leaseRows"></tbody></table></div>
-  </section>
-
-  <section class="card">
-    <h2>Step 2. Income tax by tier, one year (2026-27)</h2>
-    <p>The lease payment comes out of your salary before tax, so your taxable income is lower. With a loan, repayments come out of money you have already paid tax on.</p>
-    <div class="two">
-      <div class="scroll"><table><thead><tr><th colspan="4" id="t1h">Novated lease</th></tr><tr><th>Tier</th><th>Rate</th><th>Income in tier</th><th>Tax</th></tr></thead><tbody id="taxLease"></tbody></table></div>
-      <div class="scroll"><table><thead><tr><th colspan="4" id="t2h">Loan</th></tr><tr><th>Tier</th><th>Rate</th><th>Income in tier</th><th>Tax</th></tr></thead><tbody id="taxLoan"></tbody></table></div>
-    </div>
-  </section>
-
-  <section class="card">
-    <h2>Step 3. Cash left in one year</h2>
-    <div class="scroll"><table>
-      <thead><tr><th>Line</th><th>Novated lease</th><th>Loan</th></tr></thead>
-      <tbody id="yearRows"></tbody>
-    </table></div>
-  </section>
-
-  <section class="card">
-    <h2>Step 4. Account balance year by year</h2>
-    <div class="scroll"><table>
-      <thead><tr><th>End of year</th><th>Lease: cash added</th><th>Lease: balance</th><th>Loan: cash added</th><th>Loan: balance</th></tr></thead>
-      <tbody id="balRows"></tbody>
-    </table></div>
   </section>
 
   <section class="notes">
@@ -165,9 +183,8 @@ tr.neg td.n { color: var(--warn); }
     <ul>
       <li>Resident of Australia, no HELP debt, no other income, salary stays flat for the whole term.</li>
       <li>Tax tiers for 2026-27: 0% to $18,200, 15% to $45,000, 30% to $135,000, 37% to $190,000, 45% above. Medicare levy 2% of taxable income.</li>
-      <li>The electric car is exempt from fringe benefits tax, so the whole lease payment is pre-tax. This needs a car priced under the luxury car tax threshold for fuel-efficient vehicles (about $91,661 for 2026-27) and a lease signed under the rules at the time.</li>
-      <li>The balloon is paid in cash on the last day of the term. Cash after the balloon is what is left in the account.</li>
-      <li>The loan finances the full price including GST, repaid monthly from take-home pay.</li>
+      <li>The electric car is exempt from fringe benefits tax, so the whole lease payment is pre-tax. This needs a car priced under the luxury car tax threshold for fuel-efficient vehicles (about $91,661 for 2026-27).</li>
+      <li>The cash purchase starts the term with the price taken out of the account, so its balance can start below zero if the starting balance is smaller than the price. Interest the money could have earned is not counted.</li>
       <li>Not included: running costs, super effects, the reportable fringe benefits amount, early termination fees, car resale value, road user charges.</li>
       <li>This is not tax or financial advice. Check real numbers with a lease quote and a tax professional.</li>
     </ul>
@@ -224,22 +241,33 @@ function calc(i) {
   var loanTakeHome = i.salary - loanTax.total;
   var loanYearCash = loanTakeHome - loanMonthly * 12;
 
-  var noCarTax = loanTax;
-  var years = [], lb = i.start, kb = i.start;
+  // Cash purchase: full price leaves the account on day one, no repayments, same tax as the loan.
+  var cashTax = loanTax;
+  var cashYearCash = loanTakeHome;
+  var cashStart = i.start - i.price;
+
+  var years = [], lb = i.start, kb = i.start, cb = cashStart;
   for (var y = 1; y <= i.years; y++) {
     lb += leaseYearCash;
     kb += loanYearCash;
-    years.push({ year: y, leaseChange: leaseYearCash, leaseBalance: lb, loanChange: loanYearCash, loanBalance: kb });
+    cb += cashYearCash;
+    years.push({ year: y, leaseChange: leaseYearCash, leaseBalance: lb, loanChange: loanYearCash, loanBalance: kb,
+      cashChange: cashYearCash, cashBalance: cb });
   }
   var leaseBeforeBalloon = lb;
   var leaseEnd = lb - balloon;
   var loanEnd = kb;
+  var cashEnd = cb;
+  // Baseline: same salary, same tax, no car at all.
+  var noCarEnd = i.start + i.years * loanTakeHome;
   return {
     n: n, financed: financed, balloon: balloon,
     leaseMonthly: leaseMonthly, leasePretaxYear: leasePretaxYear, leaseTax: leaseTax,
     leaseYearCash: leaseYearCash, leaseBeforeBalloon: leaseBeforeBalloon, leaseEnd: leaseEnd,
     loanMonthly: loanMonthly, loanTax: loanTax, loanTakeHome: loanTakeHome, loanYearCash: loanYearCash,
     loanEnd: loanEnd, years: years, diff: leaseEnd - loanEnd,
+    cashTax: cashTax, cashYearCash: cashYearCash, cashStart: cashStart, cashEnd: cashEnd,
+    noCarEnd: noCarEnd, leaseCost: noCarEnd - leaseEnd, loanCost: noCarEnd - loanEnd, cashCost: noCarEnd - cashEnd,
     leaseTotalPaid: leaseMonthly * n + i.fee * i.years + balloon,
     loanTotalPaid: loanMonthly * n,
     leaseTaxSavingYear: loanTax.total - leaseTax.total
@@ -257,21 +285,13 @@ function usd(x, cents) {
   return (x < -0.5 ? '-$' : '$') + s;
 }
 function pct(x) { return (Math.round(x * 10000) / 100) + '%'; }
-function tr(cells, cls) {
-  return '<tr' + (cls ? ' class="' + cls + '"' : '') + '>' + cells.map(function (c, k) {
-    return '<td' + (k > 0 ? ' class="n"' : '') + '>' + c + '</td>';
-  }).join('') + '</tr>';
+function row(label, a, b, c, cls) {
+  var cells = [a, b, c].map(function (v) { return '<td class="n">' + v + '</td>'; }).join('');
+  return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + label + '</td>' + cells + '</tr>';
 }
-function tierRows(t) {
-  var h = '';
-  t.rows.forEach(function (r) {
-    var label = r.to === Infinity ? usd(r.from + 1) + ' and over' : usd(r.from === 0 ? 0 : r.from + 1) + ' to ' + usd(r.to);
-    h += tr([label, pct(r.rate), usd(r.inBand, true), usd(r.tax, true)]);
-  });
-  h += tr(['Income tax', '', usd(t.taxable, true), usd(t.incomeTax, true)], 'sub');
-  h += tr(['Medicare levy', '2%', usd(t.taxable, true), usd(t.medicare, true)], 'sub');
-  h += tr(['Total tax', '', '', usd(t.total, true)], 'total');
-  return h;
+function head(label) { return '<tr class="head"><td colspan="4">' + label + '</td></tr>'; }
+function tierCell(r) {
+  return usd(r.tax, true) + '<small>on ' + usd(r.inBand, true) + ' at ' + pct(r.rate) + '</small>';
 }
 function readInputs() {
   var o = {};
@@ -282,14 +302,61 @@ function readInputs() {
 function render() {
   var i = readInputs();
   var r = calc(i);
-  $('rLease').textContent = usd(r.leaseEnd);
-  $('rLeaseSub').textContent = 'After paying the ' + usd(r.balloon) + ' balloon';
-  $('rLoan').textContent = usd(r.loanEnd);
-  $('rLoanSub').textContent = 'After ' + r.n + ' repayments of ' + usd(r.loanMonthly, true);
-  var d = r.diff;
-  $('rDiffLabel').textContent = d >= 0 ? 'Lease leaves you ahead by' : 'Loan leaves you ahead by';
-  $('rDiff').textContent = usd(Math.abs(d));
-  $('rDiff').className = 'big ' + (d >= 0 ? 'pos' : 'neg');
+
+  $('pLease').textContent = usd(r.leaseMonthly, true);
+  $('pBalloon').textContent = usd(r.balloon, true);
+  $('pLoan').textContent = usd(r.loanMonthly, true);
+  $('pCash').textContent = usd(i.price, true);
+
+  var ends = { Lease: r.leaseEnd, Loan: r.loanEnd, Cash: r.cashEnd };
+  var best = Math.max(r.leaseEnd, r.loanEnd, r.cashEnd);
+  ['Lease', 'Loan', 'Cash'].forEach(function (k) {
+    $('r' + k).textContent = usd(ends[k]);
+    $('b' + k).hidden = !(ends[k] >= best - 0.5);
+    var gap = ends[k] - best;
+    $('s' + k).textContent = gap >= -0.5 ? 'Best of the three' : usd(gap) + ' compared with the highest';
+  });
+
+  var costs = { Lease: r.leaseCost, Loan: r.loanCost, Cash: r.cashCost };
+  var cheapest = Math.min(r.leaseCost, r.loanCost, r.cashCost);
+  ['Lease', 'Loan', 'Cash'].forEach(function (k) {
+    $('c' + k).textContent = usd(costs[k]);
+    $('d' + k).textContent = costs[k] <= cheapest + 0.5 ? 'Lowest cost' : '+' + usd(costs[k] - cheapest) + ' compared with the lowest';
+  });
+  $('noCar').textContent = 'With no car the account would hold ' + usd(r.noCarEnd) + ' after ' + r.n / 12 + ' years (starting balance plus take-home pay on ' + usd(i.salary) + ' a year).';
+
+  var L = r.leaseTax, N = r.loanTax, C = r.cashTax;
+  var w = '';
+  w += head('Pay');
+  w += row('Gross salary', usd(i.salary, true), usd(i.salary, true), usd(i.salary, true));
+  w += row('Lease payments and fees, pre-tax', '-' + usd(r.leasePretaxYear, true), '-', '-', 'sub');
+  w += row('Taxable income', usd(L.taxable, true), usd(N.taxable, true), usd(C.taxable, true), 'total');
+  w += head('Income tax by tier, 2026-27');
+  for (var k = 0; k < L.rows.length; k++) {
+    var lab = L.rows[k].to === Infinity ? usd(L.rows[k].from + 1) + ' and over' : usd(L.rows[k].from === 0 ? 0 : L.rows[k].from + 1) + ' to ' + usd(L.rows[k].to);
+    w += row(lab, tierCell(L.rows[k]), tierCell(N.rows[k]), tierCell(C.rows[k]));
+  }
+  w += row('Income tax', usd(L.incomeTax, true), usd(N.incomeTax, true), usd(C.incomeTax, true), 'sub');
+  w += row('Medicare levy, 2%', usd(L.medicare, true), usd(N.medicare, true), usd(C.medicare, true), 'sub');
+  w += row('Total tax', usd(L.total, true), usd(N.total, true), usd(C.total, true), 'total');
+  w += head('What is left');
+  w += row('Take-home pay', usd(i.salary - r.leasePretaxYear - L.total, true), usd(r.loanTakeHome, true), usd(r.loanTakeHome, true));
+  w += row('Loan repayments, after tax', '-', '-' + usd(r.loanMonthly * 12, true), '-', 'sub');
+  w += row('Cash added to the account per year', usd(r.leaseYearCash, true), usd(r.loanYearCash, true), usd(r.cashYearCash, true), 'total');
+  w += head('Over the whole term');
+  w += row('Paid up front', '-', '-', usd(i.price, true), 'sub');
+  w += row('Balloon paid at the end', usd(r.balloon, true), '-', '-', 'sub');
+  w += row('Tax saved per year compared with the loan', usd(r.leaseTaxSavingYear, true), '-', '-', 'sub');
+  w += row('Total paid for the car', usd(r.leaseTotalPaid, true), usd(r.loanTotalPaid, true), usd(i.price, true), 'total');
+  $('work').innerHTML = w;
+
+  var b = row('Start', usd(i.start), usd(i.start), usd(r.cashStart), 'sub');
+  r.years.forEach(function (y) {
+    b += row(String(y.year), usd(y.leaseBalance), usd(y.loanBalance), usd(y.cashBalance));
+  });
+  b += row('Balloon paid at the end of the lease', '-' + usd(r.balloon), '-', '-', 'sub');
+  b += row('Final balance', usd(r.leaseEnd), usd(r.loanEnd), usd(r.cashEnd), 'total');
+  $('bal').innerHTML = b;
 
   $('formula').textContent =
     'Financed amount = price / 1.10 = ' + usd(i.price, true) + ' / 1.10 = ' + usd(r.financed, true) + '\n' +
@@ -297,36 +364,6 @@ function render() {
     'r = ' + i.leaseRate + '% / 12 = ' + (i.leaseRate / 12).toFixed(4) + '% per month, n = ' + r.n + ' months\n' +
     'Payment = (Financed - Balloon / (1+r)^n) x r / (1 - (1+r)^-n)\n' +
     '        = ' + usd(r.leaseMonthly, true) + ' per month';
-  $('leaseRows').innerHTML =
-    tr(['Monthly lease payment, pre-tax', usd(r.leaseMonthly, true)]) +
-    tr(['Payments over the term (' + r.n + ' months)', usd(r.leaseMonthly * r.n, true)]) +
-    tr(['Provider fees over the term', usd(i.fee * i.years, true)]) +
-    tr(['Balloon paid at the end', usd(r.balloon, true)]) +
-    tr(['Total paid for the car and lease', usd(r.leaseTotalPaid, true)], 'total') +
-    tr(['Pre-tax deduction per year (payments + fees)', usd(r.leasePretaxYear, true)], 'sub');
-
-  $('t1h').textContent = 'Novated lease: taxable income ' + usd(r.leaseTax.taxable, true);
-  $('t2h').textContent = 'Loan: taxable income ' + usd(r.loanTax.taxable, true);
-  $('taxLease').innerHTML = tierRows(r.leaseTax);
-  $('taxLoan').innerHTML = tierRows(r.loanTax);
-
-  $('yearRows').innerHTML =
-    tr(['Gross salary', usd(i.salary, true), usd(i.salary, true)]) +
-    tr(['Minus lease payments and fees (pre-tax)', '-' + usd(r.leasePretaxYear, true), '-']) +
-    tr(['Taxable income', usd(r.leaseTax.taxable, true), usd(r.loanTax.taxable, true)], 'sub') +
-    tr(['Minus income tax and Medicare', '-' + usd(r.leaseTax.total, true), '-' + usd(r.loanTax.total, true)]) +
-    tr(['Take-home pay', usd(i.salary - r.leasePretaxYear - r.leaseTax.total, true), usd(r.loanTakeHome, true)], 'sub') +
-    tr(['Minus loan repayments (after tax)', '-', '-' + usd(r.loanMonthly * 12, true)]) +
-    tr(['Cash added to the account', usd(r.leaseYearCash, true), usd(r.loanYearCash, true)], 'total') +
-    tr(['Tax saved by the lease per year', usd(r.leaseTaxSavingYear, true), '-'], 'pos');
-
-  var bal = '';
-  r.years.forEach(function (y) {
-    bal += tr([String(y.year), usd(y.leaseChange), usd(y.leaseBalance), usd(y.loanChange), usd(y.loanBalance)]);
-  });
-  bal += tr(['Balloon at the end of the lease', '-' + usd(r.balloon), usd(r.leaseEnd), '', ''], 'neg');
-  bal += tr(['Final balance', '', usd(r.leaseEnd), '', usd(r.loanEnd)], 'total');
-  $('balRows').innerHTML = bal;
 
   var msgs = [];
   if (i.price > 91661) msgs.push('The price is above the luxury car tax threshold for fuel-efficient vehicles (about $91,661). The FBT exemption does not apply, so the lease result is not valid.');

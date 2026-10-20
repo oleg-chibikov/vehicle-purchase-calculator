@@ -1,6 +1,12 @@
 # Vehicle Purchase Calculator
 
-A single-page calculator for **Australia only**. It shows how much money is left in your bank account at the end of the term when you buy an electric car through a **novated lease**, and compares it with buying the same car with a **car loan**.
+A single-page calculator for **Australia only**. It compares three ways to pay for an electric car, side by side in three columns:
+
+- **Novated lease.** Payments come out of salary before tax, with a balloon paid at the end.
+- **Car loan.** The full price is borrowed and repaid from take-home pay.
+- **Cash purchase.** The full price leaves the account on day one.
+
+The page shows, in this order: the parameters, the **account balance after the term** for each option, and the **total cost of the car** for each option. Total cost is the balance you would have with no car at all (same salary, same tax) minus the balance in that option.
 
 Open `index.html` in a browser. There is no build step and no dependencies.
 
@@ -53,7 +59,9 @@ Source: [ATO individual income tax rates](https://www.ato.gov.au/tax-rates-and-c
 2. **Lease tax.** The lease payments and fees come out of salary before tax. Taxable income = salary - yearly lease payments - fees. Tax is calculated tier by tier, plus Medicare.
 3. **Loan.** The loan finances the full price including GST. Repayments come out of take-home pay after tax.
 4. **Cash per year.** Lease: salary - pre-tax lease payments - tax. Loan: salary - tax - repayments.
-5. **Final balance.** Starting balance plus cash added over the term. For the lease, the balloon is paid from the account at the end.
+5. **Cash purchase.** The price is taken from the account at the start, so the balance can begin below zero. Cash added per year equals take-home pay, and tax is the same as with the loan. Interest the money could have earned is not counted.
+6. **Final balance.** Starting balance plus cash added over the term. For the lease, the balloon is paid from the account at the end.
+7. **Total cost of the car.** Balance with no car (starting balance plus take-home pay for every year) minus the final balance of the option.
 
 ## Assumptions
 
