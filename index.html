@@ -57,6 +57,9 @@ summary h2 { margin: 0; }
 details.fold[open] > summary { margin-bottom: 4px; }
 details.more { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
 details.more > summary { font-size: 0.88rem; color: var(--muted); }
+.folds { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 0 20px; }
+.folds details.more[open] > summary, .col details.more[open] > summary { margin-bottom: 10px; }
+.stack { display: grid; gap: 10px; }
 .col details.more { margin-top: 0; padding-top: 8px; border-top-style: dashed; }
 
 .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
@@ -65,7 +68,7 @@ details.more > summary { font-size: 0.88rem; color: var(--muted); }
 .col.loan { --c: var(--loan); }
 .col.cash { --c: var(--cash); }
 .col h3 { margin: 0; font-size: 1.05rem; color: var(--c); }
-.col .desc { font-size: 0.82rem; color: var(--muted); margin: 0; min-height: 2.6em; }
+.col .desc { font-size: 0.82rem; color: var(--muted); margin: 0; min-height: 3em; }
 .derived { font-size: 0.85rem; display: flex; justify-content: space-between; gap: 8px; border-top: 1px dashed var(--line); padding-top: 8px; }
 .derived b { font-family: var(--font-num); font-weight: 500; white-space: nowrap; }
 .common .derived { align-self: center; }
@@ -73,6 +76,9 @@ details.more > summary { font-size: 0.88rem; color: var(--muted); }
 .lbl { font-size: 0.8rem; color: var(--muted); }
 .lbl.best { color: var(--c); font-weight: 600; }
 .big { font-family: var(--font-num); font-size: 1.7rem; font-weight: 500; line-height: 1.2; overflow-wrap: anywhere; color: var(--c); }
+.split { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; margin: 0; font-size: 0.82rem; color: var(--muted); }
+.split dt { min-width: 0; }
+.split dd { margin: 0; font-family: var(--font-num); text-align: right; white-space: nowrap; }
 .note { margin-top: 14px; }
 .note div { margin-bottom: 4px; }
 
@@ -132,32 +138,26 @@ ul.notes li { margin-bottom: 4px; }
       <div class="derived"><span id="dutyLabel">Stamp duty</span><b id="pDuty"></b></div>
     </div>
 
-    <details class="more">
-      <summary>More settings: account, running costs, interest rates</summary>
-      <h3 class="group">Account</h3>
-      <div class="common">
-        <div class="field"><label for="start">Starting balance<small>Cash in the account today</small></label><input id="start" type="number" inputmode="decimal" step="1000" value="0"></div>
-        <div class="field"><label for="account">Account type</label>
-          <select id="account"><option value="offset" selected>Mortgage offset</option><option value="savings">Savings</option></select></div>
-        <div class="field"><label for="accountRate">Account interest, % p.a.<span data-src="assumeRates"></span><small>Mortgage rate for an offset</small></label><input id="accountRate" type="number" inputmode="decimal" step="0.05" value="6"></div>
-      </div>
-      <h3 class="group">Running costs per year</h3>
-      <div class="common">
-        <div class="field"><label for="rego">Rego and CTP<small>No GST. The first year counts here</small></label><input id="rego" type="number" inputmode="decimal" step="50" value="1000"></div>
-        <div class="field"><label for="insurance">Insurance<span data-src="gst"></span><small>With GST</small></label><input id="insurance" type="number" inputmode="decimal" step="50" value="1800"></div>
-        <div class="field"><label for="service">Servicing and tyres<span data-src="gst"></span><small>With GST</small></label><input id="service" type="number" inputmode="decimal" step="50" value="600"></div>
-        <div class="field"><label for="charging">Fuel or charging<span data-src="assumeFuel"></span><small id="chargingHint"></small></label><input id="charging" type="number" inputmode="decimal" step="50" value="765"></div>
-        <div class="field"><label for="chargingInLease">Fuel or charging through the lease<span data-src="assumeFuelGst"></span><small>Paid pre-tax by the provider</small></label><input id="chargingInLease" type="checkbox" checked></div>
-      </div>
-      <h3 class="group">Lease and loan</h3>
-      <div class="common">
-        <div class="field"><label for="leaseRate">Lease interest, % p.a.<span data-src="assumeRates"></span><small>Financier rate on the quote</small></label><input id="leaseRate" type="number" inputmode="decimal" step="0.05" value="7.5"></div>
-        <div class="field"><label for="balloonPct">Lease balloon, %<span data-src="residual"></span><small>ATO minimum for the term</small></label><input id="balloonPct" type="number" inputmode="decimal" step="0.01" value="28.13"></div>
-        <div class="field"><label for="fee">Lease provider fees per year<small>Pre-tax</small></label><input id="fee" type="number" inputmode="decimal" step="10" value="0"></div>
-        <div class="field"><label for="noExemption">Lease without the FBT exemption<span data-src="statutory"></span><small>Compare with the full 20% FBT rule</small></label><input id="noExemption" type="checkbox"></div>
-        <div class="field"><label for="loanRate">Loan interest, % p.a.<span data-src="assumeRates"></span></label><input id="loanRate" type="number" inputmode="decimal" step="0.01" value="9"></div>
-      </div>
-    </details>
+    <div class="folds">
+      <details class="more">
+        <summary>Running costs per year, all three options</summary>
+        <div class="common">
+          <div class="field"><label for="rego">Rego and CTP<small>No GST. The first year counts here</small></label><input id="rego" type="number" inputmode="decimal" step="50" value="1000"></div>
+          <div class="field"><label for="insurance">Insurance<span data-src="gst"></span><small>With GST</small></label><input id="insurance" type="number" inputmode="decimal" step="50" value="1800"></div>
+          <div class="field"><label for="service">Servicing and tyres<span data-src="gst"></span><small>With GST</small></label><input id="service" type="number" inputmode="decimal" step="50" value="600"></div>
+          <div class="field"><label for="charging">Fuel or charging<span data-src="assumeFuel"></span><small id="chargingHint"></small></label><input id="charging" type="number" inputmode="decimal" step="50" value="765"></div>
+        </div>
+      </details>
+      <details class="more">
+        <summary>The account the money comes from</summary>
+        <div class="common">
+          <div class="field"><label for="start">Starting balance<small>Cash in the account today</small></label><input id="start" type="number" inputmode="decimal" step="1000" value="0"></div>
+          <div class="field"><label for="account">Account type</label>
+            <select id="account"><option value="offset" selected>Mortgage offset</option><option value="savings">Savings</option></select></div>
+          <div class="field"><label for="accountRate">Account interest, % p.a.<span data-src="assumeRates"></span><small>Mortgage rate for an offset</small></label><input id="accountRate" type="number" inputmode="decimal" step="0.05" value="6"></div>
+        </div>
+      </details>
+    </div>
   </section>
 
   <section class="card" aria-live="polite">
@@ -167,10 +167,19 @@ ul.notes li { margin-bottom: 4px; }
         <h3>Novated lease</h3>
         <p class="desc">Paid from salary before tax. Balloon at the end.</p>
         <div class="big" id="cLease"></div><div class="lbl" id="dLease"></div>
+        <dl class="split" id="sLease"></dl>
         <div class="derived"><span>Monthly payment, before tax</span><b id="pLease"></b></div>
         <div class="derived"><span>Fringe benefits tax<span id="fbtSrc"></span></span><b id="pFbt"></b></div>
-        <div class="derived"><span>Account at the end</span><b id="rLease"></b></div>
-        <div class="derived"><span>Income tax over the term<span data-src="tax,medicare"></span></span><b id="xLease"></b></div>
+        <details class="more">
+          <summary>Lease settings</summary>
+          <div class="stack">
+            <div class="field"><label for="leaseRate">Lease interest, % p.a.<span data-src="assumeRates"></span><small>Financier rate on the quote</small></label><input id="leaseRate" type="number" inputmode="decimal" step="0.05" value="7.5"></div>
+            <div class="field"><label for="balloonPct">Lease balloon, %<span data-src="residual"></span><small>ATO minimum for the term</small></label><input id="balloonPct" type="number" inputmode="decimal" step="0.01" value="28.13"></div>
+            <div class="field"><label for="fee">Lease provider fees per year<small>Pre-tax</small></label><input id="fee" type="number" inputmode="decimal" step="10" value="0"></div>
+            <div class="field"><label for="chargingInLease">Fuel or charging paid through the lease<span data-src="assumeFuelGst"></span><small>Paid pre-tax by the provider</small></label><input id="chargingInLease" type="checkbox" checked></div>
+            <div class="field"><label for="noExemption">Lease without the FBT exemption<span data-src="statutory"></span><small>Compare with the full 20% FBT rule</small></label><input id="noExemption" type="checkbox"></div>
+          </div>
+        </details>
         <details class="more">
           <summary>All lease numbers</summary>
           <div class="derived"><span>GST credit claimed by the employer<span data-src="carLimit,gst"></span></span><b id="pGst"></b></div>
@@ -186,18 +195,20 @@ ul.notes li { margin-bottom: 4px; }
         <h3>Car loan</h3>
         <p class="desc">Price and stamp duty borrowed, repaid from take-home pay.</p>
         <div class="big" id="cLoan"></div><div class="lbl" id="dLoan"></div>
+        <dl class="split" id="sLoan"></dl>
         <div class="derived"><span>Monthly repayment, after tax</span><b id="pLoan"></b></div>
-        <div class="derived"><span>Amount borrowed</span><b id="pBorrowed"></b></div>
-        <div class="derived"><span>Account at the end</span><b id="rLoan"></b></div>
-        <div class="derived"><span>Income tax over the term</span><b id="xLoan"></b></div>
+        <details class="more">
+          <summary>Loan settings</summary>
+          <div class="stack">
+            <div class="field"><label for="loanRate">Loan interest, % p.a.<span data-src="assumeRates"></span></label><input id="loanRate" type="number" inputmode="decimal" step="0.01" value="9"></div>
+          </div>
+        </details>
       </div>
       <div class="col cash">
         <h3>Cash purchase</h3>
         <p class="desc">Price and stamp duty leave the account on day one.</p>
         <div class="big" id="cCash"></div><div class="lbl" id="dCash"></div>
-        <div class="derived"><span>Paid on day one</span><b id="pCash"></b></div>
-        <div class="derived"><span>Account at the end</span><b id="rCash"></b></div>
-        <div class="derived"><span>Income tax over the term</span><b id="xCash"></b></div>
+        <dl class="split" id="sCash"></dl>
       </div>
     </div>
     <div class="lbl note" id="costNote"></div>
@@ -479,7 +490,18 @@ function calc(i) {
   // Baseline: same salary, same tax, same account, no car at all.
   var noCar = simulate(i, i.start, takeHome, i.salary, 0);
 
+  // What each option spends over the term, by kind. The rest of the cost is interest the account did not earn.
+  var running = runningFull * i.years;
+  var gstSaved = gstCredit - residual * GST + (runningFull - leaseRunningPre - leaseRunningPost - ecmGst) * i.years;
+  var parts = {
+    lease: { car: upfront, finance: leaseMonthly * n + residual - financed + i.fee * i.years, running: running,
+      gst: -gstSaved, fbt: fbtTax * i.years, tax: -(salaryTax.total - leaseTax.total) * i.years },
+    loan: { car: upfront, finance: loanMonthly * n - upfront, running: running },
+    cash: { car: upfront, running: running }
+  };
+
   return {
+    parts: parts,
     n: n, duty: duty, upfront: upfront, gstCredit: gstCredit, financed: financed, residual: residual, balloon: balloon,
     leaseMonthly: leaseMonthly, leasePretaxYear: leasePretaxYear, leaseTax: leaseTax, leaseYearCash: leaseYearCash,
     loanMonthly: loanMonthly, salaryTax: salaryTax, takeHome: takeHome, loanYearCash: loanYearCash,
@@ -624,9 +646,7 @@ function render() {
     pFbt: r.fbt.exempt ? 'exempt' : (r.fbtTax > 0.005 ? usd(r.fbtTax) + ' a year' : '$0 after the contribution'),
     pEcm: r.ecm > 0 ? usd(r.ecm) : 'none', pRfba: r.rfba > 0 ? usd(r.rfba) : 'none',
     pRunLease: usd(r.leaseRunningYear), pResidual: usd(r.residual), pBalloon: usd(r.balloon),
-    pLoan: usd(r.loanMonthly), pBorrowed: usd(r.upfront), pCash: usd(r.upfront),
-    rLease: usd(r.lease.end), rLoan: usd(r.loan.end), rCash: usd(r.cash.end),
-    xLease: usd(r.lease.tax.total), xLoan: usd(r.loan.tax.total), xCash: usd(r.cash.tax.total),
+    pLoan: usd(r.loanMonthly),
     chargingHint: CAR_TYPES[i.carType].hint,
     resultTitle: 'Total cost of the car over ' + i.years + (i.years === 1 ? ' year' : ' years')
   });
@@ -640,6 +660,7 @@ function render() {
     $('c' + k).textContent = usd(costs[k]);
     $('d' + k).textContent = best ? 'Lowest cost' : '+' + usd(costs[k] - cheapest) + ' more than the lowest';
     $('d' + k).classList.toggle('best', best);
+    $('s' + k).innerHTML = splitRows(i, r, k.toLowerCase(), costs[k]);
   });
   $('costNote').innerHTML = lines([
     ['Cost = the account with no car (' + usd(r.noCar.end) + ' at the end) minus the account with the car. You own the car in all three cases. Its resale value is not counted.'],
@@ -676,6 +697,33 @@ function render() {
   $('flag').innerHTML = msgs.join(' ');
 }
 
+// Where the cost goes: whole dollars that add up to the total shown. Each line's tooltip has its formula.
+function splitRows(i, r, k, cost) {
+  var p = r.parts[k], y = i.years, yrs = ' x ' + y + (y === 1 ? ' year' : ' years');
+  var how = {
+    car: ['The car, price and stamp duty', 'Price ' + usd(i.price, true) + ' + stamp duty ' + usd(r.duty, true) + ' = ' + usd(p.car, true), DUTY[i.state].src],
+    finance: k === 'lease'
+      ? ['Lease interest and fees', usd(r.leaseMonthly, true) + ' x ' + r.n + ' payments + residual ' + usd(r.residual, true) + ' - amount financed ' + usd(r.financed, true) + (i.fee ? ' + fees ' + usd(i.fee, true) + yrs : '') + ' = ' + usd(p.finance, true), ['assumeRates', 'residual']]
+      : ['Loan interest', usd(r.loanMonthly, true) + ' x ' + r.n + ' repayments - amount borrowed ' + usd(r.upfront, true) + ' = ' + usd(p.finance, true), ['assumeRates']],
+    running: ['Running costs', '(rego ' + usd(i.rego, true) + ' + insurance ' + usd(i.insurance, true) + ' + servicing ' + usd(i.service, true) + ' + fuel or charging ' + usd(i.charging, true) + ')' + yrs + ' = ' + usd(p.running, true), ['assumeFuel']],
+    gst: [p.gst > 0 ? 'GST paid, net' : 'GST saved', 'GST credit on the car ' + usd(r.gstCredit, true) + ' - GST on the balloon ' + usd(r.balloon - r.residual, true) + ' + GST saved on running costs ' + usd(r.runningFull - r.leaseRunningYear, true) + yrs + (r.ecmGst ? ' - GST on the post-tax contribution ' + usd(r.ecmGst, true) + yrs : '') + ' = ' + usd(-p.gst, true), ['gst', 'carLimit', 'assumeFuelGst', 'ecmGst']],
+    fbt: ['Fringe benefits tax', usd(r.fbtTax, true) + ' a year' + yrs + ' = ' + usd(p.fbt, true), ['fbtRates']],
+    tax: [p.tax > 0 ? 'Extra income tax' : 'Income tax saved', 'Tax on the salary ' + usd(r.salaryTax.total, true) + ' - tax with the lease ' + usd(r.leaseTax.total, true) + ' = ' + usd(r.salaryTax.total - r.leaseTax.total, true) + ' a year' + yrs + ' = ' + usd(-p.tax, true), ['tax', 'medicare']]
+  };
+  var total = Math.round(cost), rest = total, out = '';
+  Object.keys(p).forEach(function (key) {
+    var v = Math.round(p[key]);
+    rest -= v;
+    if (v) out += splitRow(how[key][0], v, how[key][1], how[key][2]);
+  });
+  // The rest is what the account would have earned on the money spent, after any tax on that interest.
+  if (rest) out += splitRow('Interest the account missed', rest, 'Total ' + usd(total) + ' minus the lines above = ' + usd(rest) + ', in whole dollars. The money spent on the car would have earned ' + i.accountRate + '% a year' + (i.account === 'savings' ? ', less tax on that interest.' : ' in the offset.'), ['assumeRates']);
+  return out;
+}
+function splitRow(label, v, formula, src) {
+  return '<dt>' + esc(label) + info(src, formula) + '</dt><dd>' + (v > 0 ? '+' : '') + usd(v) + '</dd>';
+}
+
 function setText(map) { Object.keys(map).forEach(function (id) { $(id).textContent = map[id]; }); }
 
 // The per-year table: pay, tax by tier, what is left, then totals over the term. Whole dollars, the formulas show cents.
@@ -708,6 +756,7 @@ function workRows(i, r) {
   w += row('Running costs over the term', usd(r.leaseRunningYear * i.years), usd(r.runningFull * i.years), usd(r.runningFull * i.years), 'sub');
   if (!r.fbt.exempt) w += row('GST on the post-tax contribution and FBT, over the term' + info(['ecmGst', 'fbtRates']), usd((r.ecmGst + r.fbtTax) * i.years), '-', '-', 'sub');
   w += row('Total paid for the car and running it, before tax savings', usd(r.leaseTotalPaid), usd(r.loanTotalPaid), usd(r.cashTotalPaid), 'total');
+  w += row('Income tax over the term' + info(['tax', 'medicare']), usd(r.lease.tax.total), usd(r.loan.tax.total), usd(r.cash.tax.total), 'sub');
   w += row('Interest on the account', usd(r.lease.interest), usd(r.loan.interest), usd(r.cash.interest), 'sub');
   w += row('Tax on that interest', savings ? usd(r.lease.interestTax) : 'tax free', savings ? usd(r.loan.interestTax) : 'tax free', savings ? usd(r.cash.interestTax) : 'tax free', 'sub');
   return w;
@@ -781,14 +830,14 @@ function sourceLinks(s) {
     : '<span class="assume">' + esc(s.note || 'Assumption, no source. Change the input to your own number.') + '</span>';
 }
 
-// The i icon. Its tooltip names each source, the value used, and links to the page it came from.
-function info(keys) {
+// The i icon. Its tooltip shows the formula when given, then names each source, the value used, and links to the page it came from.
+function info(keys, formula) {
   keys = [].concat(keys);
-  var body = keys.map(function (k) {
+  var body = (formula ? [esc(formula)] : []).concat(keys.map(function (k) {
     var s = SOURCES[k];
     if (!s) throw new Error('SOURCES.' + k + ' must exist');
     return '<b>' + esc(s.name) + '</b><br>' + esc(s.value) + '<br>' + sourceLinks(s);
-  }).join('<hr>');
+  })).join('<hr>');
   var names = keys.map(function (k) { return SOURCES[k].name; }).join(', ');
   return '<span class="i" tabindex="0" role="button" aria-label="Source: ' + esc(names) + '">i<span class="tip" role="tooltip">' + body + '</span></span>';
 }

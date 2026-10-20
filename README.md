@@ -8,8 +8,14 @@ A single-page calculator for **Australia only**. It compares three ways to pay f
 
 The page has one screen of content, in this order:
 
-1. **Your car.** Salary, price, car type, state, term and start date. Rates, running costs and the account sit under "More settings".
-2. **Total cost of the car** for each option, with the monthly payment, the account at the end and the income tax over the term. Total cost is the balance you would have with no car at all (same salary, same tax) minus the balance in that option.
+1. **Your car.** Salary, price, car type, state, term and start date. Running costs and the account fold below them, because all three options share them.
+2. **Total cost of the car** for each option. Total cost is the balance you would have with no car at all (same salary, same tax) minus the balance in that option. Under each total, lines show where the money goes, and they add up to the total:
+   - the car, price and stamp duty
+   - lease or loan interest, and running costs
+   - GST and income tax the lease saves, and FBT when it applies
+   - interest the account missed, which is the rest. It is what the money spent on the car would have earned in the account. At 0% account interest this line is gone.
+
+   The lease column folds its own settings (rate, balloon, fees, fuel through the lease, no FBT exemption). The loan column folds its rate.
 3. **How it is worked out** and **Sources for every number**, folded until you open them.
 
 Open `index.html` in a browser. There is no build step and no dependencies.
@@ -17,6 +23,8 @@ Open `index.html` in a browser. There is no build step and no dependencies.
 Every step of the calculation is under "How it is worked out": income tax by tier, cash left per year, the balance year by year, FBT, stamp duty and the lease payment formula.
 
 Every fixed number has a source. An **i** icon next to it opens a tooltip with the value, a link to the official page, and the date it was checked. The section "Sources for every number" at the bottom of the page lists all of them. A number with no source is marked as an assumption.
+
+The **i** next to each cost line shows its formula with your numbers in cents, then the sources it uses.
 
 In the code, the constants sit at the top of the script and each names its `SOURCES` entry in a comment. Every text that mentions a number is built from its constant, so a rule changes in one place. Each state's stamp duty rates sit once in the `DUTY` table, and both the formula and its description read them.
 
@@ -101,7 +109,7 @@ These are the inputs a novated lease quote is built from:
 
 The monthly payment is not an input. It is calculated from the rate, term and balloon. If a provider gives you a monthly payment instead, adjust the interest rate until the payment on the page matches.
 
-Other inputs, most of them under "More settings": gross salary (excluding super), a loan interest rate for the comparison (default 9%, an estimate, not market data), a starting account balance, the account type and its interest rate, the four yearly running costs, and a checkbox that models the lease without the FBT exemption.
+Other inputs, folded next to the part of the page they change: gross salary (excluding super), a loan interest rate for the comparison (default 9%, an estimate, not market data), a starting account balance, the account type and its interest rate, the four yearly running costs, and a checkbox that models the lease without the FBT exemption.
 
 ## Tax used: 2026-27 resident rates
 
