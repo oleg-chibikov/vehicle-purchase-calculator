@@ -76,6 +76,16 @@ input:focus-visible, select:focus-visible { outline: 2px solid var(--lease); out
 .tier.sum { font-weight: 600; border-bottom: 2px solid var(--fg); }
 .tier.sum b { font-weight: 600; }
 .scroll { overflow-x: auto; }
+.i { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; margin-left: 5px; border-radius: 50%; border: 1px solid var(--muted); color: var(--muted); font: 600 10px/1 var(--font-num); font-style: normal; text-transform: none; letter-spacing: 0; cursor: help; vertical-align: 1px; white-space: normal; }
+.i:hover, .i:focus-visible { border-color: var(--lease); color: var(--lease); outline: none; }
+.i .tip { display: none; position: fixed; z-index: 20; padding: 9px 11px; background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25); font: 400 0.8rem/1.45 var(--font-body); text-align: left; cursor: auto; }
+.i:hover .tip, .i:focus .tip, .i:focus-within .tip { display: block; }
+.i .tip a { color: var(--lease); overflow-wrap: anywhere; }
+.i .tip b { font-family: var(--font-body); font-weight: 600; white-space: normal; }
+.i .tip small { color: var(--muted); }
+.i .tip .tip-assume { color: var(--warn); }
+table.src td, table.src th { text-align: left; width: auto; }
+table.src a { color: var(--lease); overflow-wrap: anywhere; }
 table { width: 100%; border-collapse: collapse; min-width: 560px; }
 th, td { padding: 7px 6px; text-align: right; border-bottom: 1px solid var(--line); font-size: 0.88rem; vertical-align: top; }
 th:first-child, td:first-child { text-align: left; width: 34%; }
@@ -101,7 +111,7 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
 <div class="wrap">
   <header>
     <h1>Vehicle Purchase Calculator</h1>
-    <p class="sub">Australia only. Compares three ways to pay for an electric car and shows how much money is in your account at the end of the term. Stamp duty, running costs (rego, insurance, servicing, charging) and interest on the account are included in all three. Defaults are examples, not a quote.</p>
+    <p class="sub">Australia only. Compares three ways to pay for a car and shows how much money is in your account at the end of the term. Stamp duty, running costs (rego, insurance, servicing, fuel or charging) and interest on the account are included in all three. Defaults are examples, not a quote.</p>
   </header>
 
   <div class="flag" id="flag" hidden></div>
@@ -111,6 +121,9 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
     <div class="common">
       <div class="field"><label for="salary">Gross salary per year<small>Excluding super</small></label><input id="salary" type="number" inputmode="decimal" step="1000" value="200000"></div>
       <div class="field"><label for="price">Car price<small>Including GST and dealer delivery, before stamp duty and rego</small></label><input id="price" type="number" inputmode="decimal" step="500" value="50000"></div>
+      <div class="field"><label for="carType">Car type<span data-src="evExempt,phev,evChange,statutory"></span><small>Sets FBT on the lease, stamp duty and the fuel cost</small></label>
+        <select id="carType"><option value="ev" selected>Electric (battery or hydrogen)</option><option value="phev">Plug-in hybrid</option><option value="ice">Petrol, diesel or regular hybrid</option></select></div>
+      <div class="field"><label for="startDate">Start date<span data-src="evChange,phev,dutyACT,dutyNT"></span><small>When the car is registered and first used. Rules depend on it</small></label><input id="startDate" type="date"></div>
       <div class="field"><label for="state">State or territory<small>Sets the stamp duty</small></label>
         <select id="state"><option value="NSW" selected>NSW</option><option value="VIC">VIC</option><option value="QLD">QLD</option><option value="SA">SA</option><option value="WA">WA</option><option value="TAS">TAS</option><option value="ACT">ACT</option><option value="NT">NT</option></select></div>
       <div class="field"><label for="years">Term, years</label>
@@ -118,36 +131,40 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
       <div class="field"><label for="start">Starting balance<small>Cash in the account today</small></label><input id="start" type="number" inputmode="decimal" step="1000" value="0"></div>
       <div class="field"><label for="account">Account type<small>Where the money sits</small></label>
         <select id="account"><option value="offset" selected>Mortgage offset</option><option value="savings">Savings</option></select></div>
-      <div class="field"><label for="accountRate">Account interest, % p.a.<small>Mortgage rate for an offset, or the savings rate</small></label><input id="accountRate" type="number" inputmode="decimal" step="0.05" value="6"></div>
+      <div class="field"><label for="accountRate">Account interest, % p.a.<span data-src="assumeRates"></span><small>Mortgage rate for an offset, or the savings rate</small></label><input id="accountRate" type="number" inputmode="decimal" step="0.05" value="6"></div>
       <div class="derived"><span id="dutyLabel">Stamp duty</span><b id="pDuty"></b></div>
     </div>
 
     <div class="common">
       <div class="field"><label for="rego">Rego and CTP per year<small>No GST. The first year is counted here, not in the price</small></label><input id="rego" type="number" inputmode="decimal" step="50" value="1000"></div>
-      <div class="field"><label for="insurance">Insurance per year<small>Including GST</small></label><input id="insurance" type="number" inputmode="decimal" step="50" value="1800"></div>
-      <div class="field"><label for="service">Servicing and tyres per year<small>Including GST</small></label><input id="service" type="number" inputmode="decimal" step="50" value="600"></div>
-      <div class="field"><label for="charging">Charging per year<small>About 15,000 km at $0.30 per kWh</small></label><input id="charging" type="number" inputmode="decimal" step="50" value="765"></div>
-      <div class="field"><label for="chargingInLease">Charging through the lease<small>Reimbursed pre-tax by the provider</small></label><input id="chargingInLease" type="checkbox" checked style="justify-self:end;width:auto"></div>
+      <div class="field"><label for="insurance">Insurance per year<span data-src="gst"></span><small>Including GST</small></label><input id="insurance" type="number" inputmode="decimal" step="50" value="1800"></div>
+      <div class="field"><label for="service">Servicing and tyres per year<span data-src="gst"></span><small>Including GST</small></label><input id="service" type="number" inputmode="decimal" step="50" value="600"></div>
+      <div class="field"><label for="charging">Fuel or charging per year<span data-src="assumeFuel"></span><small id="chargingHint"></small></label><input id="charging" type="number" inputmode="decimal" step="50" value="765"></div>
+      <div class="field"><label for="chargingInLease">Fuel or charging through the lease<span data-src="assumeFuelGst,gst"></span><small>Paid pre-tax by the provider</small></label><input id="chargingInLease" type="checkbox" checked style="justify-self:end;width:auto"></div>
     </div>
 
     <div class="cols">
       <div class="col lease">
         <h3>Novated lease</h3>
-        <p class="desc">Payments come out of salary before tax. Balloon paid at the end.</p>
-        <div class="field"><label for="leaseRate">Interest rate, % p.a.<small>Financier rate on the quote</small></label><input id="leaseRate" type="number" inputmode="decimal" step="0.05" value="7.5"></div>
-        <div class="field"><label for="balloonPct">Balloon, %<small>ATO minimum for the term</small></label><input id="balloonPct" type="number" inputmode="decimal" step="0.01" value="28.13"></div>
+        <p class="desc">Payments come out of salary before tax. A car without the FBT exemption also needs a post-tax part. Balloon paid at the end.</p>
+        <div class="field"><label for="leaseRate">Interest rate, % p.a.<span data-src="assumeRates"></span><small>Financier rate on the quote</small></label><input id="leaseRate" type="number" inputmode="decimal" step="0.05" value="7.5"></div>
+        <div class="field"><label for="balloonPct">Balloon, %<span data-src="residual"></span><small>ATO minimum for the term</small></label><input id="balloonPct" type="number" inputmode="decimal" step="0.01" value="28.13"></div>
         <div class="field"><label for="fee">Provider fees per year<small>Pre-tax</small></label><input id="fee" type="number" inputmode="decimal" step="10" value="0"></div>
-        <div class="derived"><span>GST credit claimed by the employer</span><b id="pGst"></b></div>
-        <div class="derived"><span>Amount financed, without GST, with stamp duty</span><b id="pFinanced"></b></div>
-        <div class="derived"><span>Monthly payment, pre-tax</span><b id="pLease"></b></div>
-        <div class="derived"><span>Running costs per year, via lease</span><b id="pRunLease"></b></div>
-        <div class="derived"><span>Residual, without GST</span><b id="pResidual"></b></div>
-        <div class="derived"><span>Balloon paid at the end, with GST</span><b id="pBalloon"></b></div>
+        <div class="field"><label for="noExemption">Model without the FBT exemption<span data-src="statutory"></span><small>Compare with the full 20% FBT rule</small></label><input id="noExemption" type="checkbox" style="justify-self:end;width:auto"></div>
+        <div class="derived"><span>GST credit claimed by the employer<span data-src="carLimit,gst"></span></span><b id="pGst"></b></div>
+        <div class="derived"><span>Amount financed, without GST, with stamp duty<span data-src="carLimit"></span></span><b id="pFinanced"></b></div>
+        <div class="derived"><span>Monthly payment, before the FBT split</span><b id="pLease"></b></div>
+        <div class="derived"><span>Fringe benefits tax<span id="fbtSrc"></span></span><b id="pFbt"></b></div>
+        <div class="derived"><span>Post-tax contribution per year, removes FBT<span data-src="statutory,ecmGst"></span></span><b id="pEcm"></b></div>
+        <div class="derived"><span>Reportable fringe benefit per year<span data-src="fbtRates"></span></span><b id="pRfba"></b></div>
+        <div class="derived"><span>Running costs per year, via lease<span data-src="gst,assumeFuelGst"></span></span><b id="pRunLease"></b></div>
+        <div class="derived"><span>Residual, without GST<span data-src="residual"></span></span><b id="pResidual"></b></div>
+        <div class="derived"><span>Balloon paid at the end, with GST<span data-src="gst"></span></span><b id="pBalloon"></b></div>
       </div>
       <div class="col loan">
         <h3>Car loan</h3>
         <p class="desc">Repayments come out of pay after tax. The price with GST and stamp duty is borrowed.</p>
-        <div class="field"><label for="loanRate">Interest rate, % p.a.</label><input id="loanRate" type="number" inputmode="decimal" step="0.01" value="9"></div>
+        <div class="field"><label for="loanRate">Interest rate, % p.a.<span data-src="assumeRates"></span></label><input id="loanRate" type="number" inputmode="decimal" step="0.01" value="9"></div>
         <div class="derived"><span>Amount borrowed</span><b id="pBorrowed"></b></div>
         <div class="derived"><span>Monthly repayment, after tax</span><b id="pLoan"></b></div>
         <div class="derived"><span>Running costs per year, after tax</span><b id="pRunLoan"></b></div>
@@ -211,8 +228,13 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
   </section>
 
   <section class="card">
+    <h2>Fringe benefits tax for this car</h2>
+    <div class="formula" id="fbtNote" style="white-space:pre-wrap"></div>
+  </section>
+
+  <section class="card">
     <h2>Stamp duty and lease payment formula</h2>
-    <p>A novated lease finances the price without GST, because the employer claims the GST back. The GST credit on a car is capped at one eleventh of the car limit ($69,883 for 2026-27). Stamp duty has no GST and is financed in full. The ATO residual is a share of the amount financed without GST, and GST is added when you buy the car at the end.</p>
+    <p>A novated lease finances the price without GST, because the employer claims the GST back. The GST credit on a car is capped at one eleventh of the car limit ($69,883 for 2026-27). Stamp duty has no GST and is financed in full. The ATO residual is a share of the amount financed without GST, and GST is added when you buy the car at the end.<span data-src="gst,carLimit,residual"></span></p>
     <div class="formula" id="formula"></div>
   </section>
 
@@ -220,36 +242,135 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
     <h2>Assumptions</h2>
     <ul>
       <li>Resident of Australia, no HELP debt, no other income, salary stays flat for the whole term.</li>
-      <li>Tax tiers for 2026-27: 0% to $18,200, 15% to $45,000, 30% to $135,000, 37% to $190,000, 45% above. Medicare levy 2% of taxable income.</li>
-      <li>The electric car is exempt from fringe benefits tax, so the whole lease payment is pre-tax. This needs a car priced under the luxury car tax threshold for fuel-efficient vehicles ($91,661 for 2026-27). That check uses the price with GST and without stamp duty and rego.</li>
+      <li>Tax tiers for 2026-27: 0% to $18,200, 15% to $45,000, 30% to $135,000, 37% to $190,000, 45% above. Medicare levy 2% of taxable income.<span data-src="tax,medicare"></span></li>
+      <li>FBT on the lease depends on the car type, the start date and the price. It is explained under "Fringe benefits tax for this car". An exempt car has the whole lease paid pre-tax. A car without the exemption pays a post-tax contribution equal to its taxable value each year: 20% of the price, or 15% for an electric car under the announced changes. The FBT is then $0, and one eleventh of the contribution goes to the ATO as GST. The changes for electric cars from 1 April 2027 were announced on 5 May 2026 and are not yet law.<span data-src="statutory,ecmGst,evExempt,phev,evChange"></span></li>
       <li>The cash purchase starts the term with the price and stamp duty taken out of the account, so its balance can start below zero if the starting balance is smaller.</li>
-      <li>The account earns interest every month at the rate you enter. In a mortgage offset the interest saved is tax free. In a savings account the interest is added to taxable income and the extra tax is paid at the end of each year. A balance below zero costs the same rate with no tax deduction: a bigger mortgage for an offset, a loan for savings.</li>
+      <li>The account earns interest every month at the rate you enter. In a mortgage offset the interest saved is tax free. In a savings account the interest is added to taxable income and the extra tax is paid at the end of each year. A balance below zero costs the same rate with no tax deduction: a bigger mortgage for an offset, a loan for savings.<span data-src="assumeRates"></span></li>
       <li>Salary, lease payments, loan repayments and running costs are paid monthly at the end of each month. Some lease providers charge in advance, which makes the payment slightly lower.</li>
-      <li>Stamp duty is worked out from the car price for a new electric car in the chosen state or territory, and the formula is shown under "Stamp duty and lease payment formula". The rules come from each revenue office as last known and are not checked for 2026-27 changes. Check yours with the state revenue office. It is part of the amount financed by the lease and the loan. Rego and CTP for the first year are counted in the yearly running costs, not in the price.</li>
-      <li>The GST credit on the car is capped at $6,353 (one eleventh of the 2026-27 car limit of $69,883). Above that price the lease finances more than the price divided by 1.1.</li>
-      <li>Running costs through the lease are paid before tax. GST is recovered on insurance and servicing, so those cost one eleventh less. Rego and CTP carry no GST. With a loan or cash they are paid from take-home pay including GST.</li>
-      <li>Home charging is treated as reimbursed pre-tax with no GST saving. Untick the box if your provider does not cover it, and it is paid from take-home pay instead.</li>
+      <li>Stamp duty is worked out from the car price, the car type and the start date in the chosen state or territory. The formula is shown under "Stamp duty and lease payment formula". Every state rule was checked on its revenue office site on 20 October 2026. ACT duty depends on CO2 emissions: the page uses a typical category for each type. QLD duty for a petrol car assumes 4 cylinders. Stamp duty is part of the amount financed by the lease and the loan. Rego and CTP for the first year are counted in the yearly running costs, not in the price.<span data-src="dutyNSW,dutyVIC,dutyQLD,dutySA,dutyWA,dutyTAS,dutyACT,dutyNT,assumeDutyType"></span></li>
+      <li>The GST credit on the car is capped at $6,353 (one eleventh of the 2026-27 car limit of $69,883). Above that price the lease finances more than the price divided by 1.1.<span data-src="carLimit"></span></li>
+      <li>Running costs through the lease are paid before tax. GST is recovered on insurance and servicing, so those cost one eleventh less. Rego and CTP carry no GST. With a loan or cash they are paid from take-home pay including GST.<span data-src="gst"></span></li>
+      <li>Home charging of an electric car is treated as reimbursed pre-tax with no GST saving. Fuel for a plug-in hybrid or a petrol car is bought on a fuel card, so GST is recovered on it. Untick the box if your provider does not cover fuel or charging, and it is paid from take-home pay instead. The default fuel cost changes with the car type and is only an example.<span data-src="assumeFuelGst,assumeFuel"></span></li>
       <li>Running costs are flat per year with no inflation. They are the same car and the same use in all three cases.</li>
-      <li>Not included: super effects, the reportable fringe benefits amount, early termination fees, car resale value, road user charges, the stamp duty inside insurance premiums.</li>
+      <li>Not included: super effects, early termination fees, car resale value, road user charges, the stamp duty inside insurance premiums. The reportable fringe benefit is shown but does not change any result.<span data-src="fbtRates,rfba"></span></li>
       <li>This is not tax or financial advice. Check real numbers with a lease quote and a tax professional.</li>
     </ul>
+  </section>
+
+  <section class="card">
+    <h2>Sources for every number</h2>
+    <p class="lbl">Each fixed number in the calculation, where it comes from, and when it was checked. The same links sit behind the i icons. Rows marked as an assumption have no source: change those inputs to your own numbers.</p>
+    <div class="scroll"><table class="src">
+      <thead><tr><th>What</th><th>Value used</th><th>Source</th></tr></thead>
+      <tbody id="sources"></tbody>
+    </table></div>
   </section>
 </div>
 
 <script>
-var TIERS = [
+// Every fixed number in the calculation has an entry here. The page shows each entry behind an "i" icon
+// and lists all of them under "Sources for every number". Entries without links are assumptions.
+var RULES_CHECKED = '2026-10-20';
+var SOURCES = {
+  tax: { name: 'Income tax tiers 2026-27', value: '0% to $18,200, 15% to $45,000, 30% to $135,000, 37% to $190,000, 45% above',
+    links: [['ATO: tax rates for Australian residents', 'https://www.ato.gov.au/tax-rates-and-codes/tax-rates-australian-residents']] },
+  medicare: { name: 'Medicare levy', value: '2% of taxable income',
+    links: [['ATO: what is the Medicare levy', 'https://www.ato.gov.au/individuals-and-families/medicare-and-private-health-insurance/medicare-levy/what-is-the-medicare-levy']] },
+  gst: { name: 'GST', value: '10% of the price without GST, so one eleventh of a price with GST',
+    links: [['GSTR 2001/3, paragraph 21', 'https://www.ato.gov.au/law/view/document?docid=GST/GSTR20013/NAT/ATO/00001']] },
+  carLimit: { name: 'Car limit 2026-27', value: '$69,883. The GST credit on a car is capped at one eleventh of it, $6,353',
+    links: [['ATO: car thresholds from 1 July', 'https://www.ato.gov.au/businesses-and-organisations/small-business-newsroom/car-thresholds-from-1-july']] },
+  lct: { name: 'Luxury car tax threshold for fuel-efficient cars 2026-27', value: '$91,661',
+    links: [['ATO: luxury car tax rate and thresholds', 'https://www.ato.gov.au/tax-rates-and-codes/luxury-car-tax-rate-and-thresholds']] },
+  residual: { name: 'Minimum residual for a leased car', value: '65.63%, 56.25%, 46.88%, 37.5%, 28.13% for a 1 to 5 year lease',
+    links: [['ATO ID 2002/1004: car lease residual values', 'https://www.ato.gov.au/law/view/document?docid=AID/AID20021004/00001']] },
+  statutory: { name: 'FBT statutory formula', value: 'Taxable value = base value x 20% x days available / days in the year - employee contribution. Base value = the price with GST and dealer delivery, without rego and stamp duty',
+    links: [['ATO: taxable value of a car fringe benefit', 'https://www.ato.gov.au/businesses-and-organisations/hiring-and-paying-your-workers/fringe-benefits-tax/types-of-fringe-benefits/fbt-on-cars-other-vehicles-parking-and-tolls/cars-and-fbt/taxable-value-of-a-car-fringe-benefit']] },
+  fbtRates: { name: 'FBT rate, gross-up rates, reporting threshold', value: 'FBT 47%. Gross-up 2.0802 with a GST credit, 1.8868 without. Reportable once the taxable value is over $2,000, grossed up at 1.8868',
+    links: [['ATO: FBT rates and thresholds', 'https://www.ato.gov.au/tax-rates-and-codes/fringe-benefits-tax-rates-and-thresholds']] },
+  ecmGst: { name: 'GST on the post-tax contribution', value: 'The contribution is the price of a taxable supply, so the employer pays one eleventh of it as GST',
+    links: [['GSTR 2001/3, paragraphs 21 to 23', 'https://www.ato.gov.au/law/view/document?docid=GST/GSTR20013/NAT/ATO/00001']] },
+  evExempt: { name: 'Electric car FBT exemption', value: 'Battery electric or hydrogen car, first used on or after 1 July 2022, priced under the LCT threshold for fuel-efficient cars. Home charging is exempt too',
+    links: [['ATO: electric cars exemption', 'https://www.ato.gov.au/businesses-and-organisations/hiring-and-paying-your-workers/fringe-benefits-tax/types-of-fringe-benefits/fbt-on-cars-other-vehicles-parking-and-tolls/electric-cars-exemption']] },
+  phev: { name: 'Plug-in hybrids and FBT', value: 'No exemption from 1 April 2025. A plug-in hybrid used before then keeps it to the end of the fixed lease term',
+    links: [['ATO: FBT on plug-in hybrid electric vehicles', 'https://www.ato.gov.au/businesses-and-organisations/hiring-and-paying-your-workers/fringe-benefits-tax/types-of-fringe-benefits/fbt-on-cars-other-vehicles-parking-and-tolls/fbt-on-plug-in-hybrid-electric-vehicles']] },
+  evChange: { name: 'Announced EV FBT changes, not yet law', value: 'Full exemption to 31 March 2027. From 1 April 2027 to 1 April 2029: full for a car costing $75,000 or less, a 15% statutory rate above. From 1 April 2029: a 15% rate for every electric car under the LCT threshold. Existing leases keep their rules',
+    links: [['ATO: electric car discount changes', 'https://www.ato.gov.au/about-ato/new-legislation/in-detail/businesses/electric-car-discount-more-sustainable-fbt-treatment-of-electric-cars'],
+      ['Treasury media release, 5 May 2026', 'https://ministers.treasury.gov.au/ministers/jim-chalmers-2022/media-releases/fairer-tax-treatment-encourage-affordable-evs']] },
+  dutyNSW: { name: 'Stamp duty NSW', value: 'Any car: $3 per $100 up to $44,999, then $1,350 + $5 per $100 above $45,000',
+    links: [['Revenue NSW: motor vehicle duty', 'https://www.revenue.nsw.gov.au/taxes-duties-levies-royalties/motor-vehicle-duty']] },
+  dutyVIC: { name: 'Stamp duty VIC from 1 July 2026', value: 'Green car (120 g/km CO2 or less): $8.40 per $200 at any price. Other car: $8.40 per $200 up to $80,809, $10.40 to $100,000, $14 to $150,000, $18 above',
+    links: [['SRO Victoria: motor vehicle duty current rates', 'https://www.sro.vic.gov.au/about-us/rates-and-statistics/current-rates/motor-vehicle-duty-current-rates']] },
+  dutyQLD: { name: 'Stamp duty QLD', value: 'Electric or hybrid: $2 per $100 up to $100,000, $4 per $100 above. 1 to 4 cylinders: $3 and $5. The higher rate applies to the whole price',
+    links: [['Queensland Government: vehicle registration duty rates', 'https://www.qld.gov.au/transport/registration/fees/duty/rates']] },
+  dutySA: { name: 'Stamp duty SA', value: 'Non-commercial car: $60 + $4 per $100 above $3,000 (lower rates under $3,000)',
+    links: [['RevenueSA: stamp duty rates for vehicles', 'https://revenuesa.sa.gov.au/stamp-duty-vehicles/rates']] },
+  dutyWA: { name: 'Stamp duty WA', value: '2.75% up to $25,000. Between $25,000 and $50,000: R% of the whole price, R = 2.75 + (price - 25,000) / 6,666.66, rounded to 2 decimals. 6.5% above $50,000',
+    links: [['WA Government: vehicle licence duty', 'https://www.wa.gov.au/organisation/department-of-treasury-and-finance/vehicle-licence-duty']] },
+  dutyTAS: { name: 'Stamp duty TAS', value: '$20 up to $600, $3 per $100 to $35,000, $1,050 + $11 per $100 to $40,000, $4 per $100 of the whole price above',
+    links: [['SRO Tasmania: rates of duty', 'https://www.sro.tas.gov.au/motor-vehicle-duty/rates-of-duty']] },
+  dutyACT: { name: 'Stamp duty ACT, by CO2 emissions', value: 'New car, up to $45,000 / $45,000 to $80,000 / above $80,000. AAA (0 g/km): $2.50, $4.00, $8 per $100. AA (1 to 65): $2.67, $4.41, $8. B (131 to 175): $3.00, $5.22, $8 to 31 January 2027, then $3.25, $5.59, $8',
+    links: [['ACT Revenue Office: motor vehicle duty', 'https://www.revenue.act.gov.au/motor-vehicle-duty']] },
+  dutyNT: { name: 'Stamp duty NT', value: '3% of the price. An electric car or plug-in hybrid registered from 1 July 2022 to 30 June 2027 pays 3% only of the price above $50,000, and has free rego (CTP still paid)',
+    links: [['NT Government: EV registration and stamp duty concessions', 'https://nt.gov.au/driving/rego/getting-an-nt-registration/get-electric-vehicle-registration-and-stamp-duty-concessions']] },
+  rfba: { name: 'What the reportable fringe benefit changes', value: 'It is not taxed. It counts for the Medicare levy surcharge, HELP and other study loan repayments, Division 293 tax, family payments and child support',
+    links: [['ATO: consequences of having a reportable fringe benefits amount', 'https://www.ato.gov.au/individuals-and-families/jobs-and-employment-types/working-as-an-employee/reportable-fringe-benefits-for-employees/consequences-of-having-a-reportable-fringe-benefits-amount']] },
+  oneThird: { name: 'Base value after 4 years', value: 'The base value drops by a third once the car has been held for 4 years. Not used in the calculation', note: 'Rule from memory, not checked against a source.' },
+  assumeRates: { name: 'Interest rates', value: 'Lease 7.5%, loan 9%, account 6% are examples. Use the rates on your own quote and account' },
+  assumeFuel: { name: 'Fuel and charging cost', value: '15,000 km a year. Electric: 17 kWh per 100 km at $0.30 per kWh. Petrol: 7 L per 100 km at $2.00 per litre. Plug-in hybrid: half of the distance each way at 6.5 L per 100 km' },
+  assumeFuelGst: { name: 'GST on fuel through the lease', value: 'Home charging is reimbursed with no GST credit. Fuel for a plug-in hybrid or petrol car is bought on a fuel card, so the GST is claimed back' },
+  assumeDutyType: { name: 'Duty category by car type', value: 'ACT: electric AAA, plug-in hybrid AA, petrol B. QLD petrol: 4 cylinders. VIC: electric and plug-in hybrid count as green cars, petrol does not' }
+};
+
+var TIERS = [ // SOURCES.tax
   { from: 0, to: 18200, rate: 0 },
   { from: 18200, to: 45000, rate: 0.15 },
   { from: 45000, to: 135000, rate: 0.30 },
   { from: 135000, to: 190000, rate: 0.37 },
   { from: 190000, to: Infinity, rate: 0.45 }
 ];
-var MEDICARE = 0.02;
-var GST = 0.10;
-// Car limit for 2026-27. The GST credit on a car is capped at one eleventh of it.
-var CAR_LIMIT = 69883;
-var LCT_FUEL_EFFICIENT = 91661;
-var RESIDUAL = { 1: 65.63, 2: 56.25, 3: 46.88, 4: 37.5, 5: 28.13 };
+var MEDICARE = 0.02; // SOURCES.medicare
+var GST = 0.10; // SOURCES.gst
+var CAR_LIMIT = 69883; // SOURCES.carLimit
+var LCT_FUEL_EFFICIENT = 91661; // SOURCES.lct
+var RESIDUAL = { 1: 65.63, 2: 56.25, 3: 46.88, 4: 37.5, 5: 28.13 }; // SOURCES.residual
+
+// Dates are ISO strings, so they compare as text.
+var TAX_YEAR_END = '2027-06-30'; // SOURCES.tax
+var STATUTORY_RATE = 0.20; // SOURCES.statutory
+var FBT_RATE = 0.47; // SOURCES.fbtRates
+var GROSS_UP_TYPE1 = 2.0802; // SOURCES.fbtRates
+var GROSS_UP_TYPE2 = 1.8868; // SOURCES.fbtRates
+var REPORTABLE_OVER = 2000; // SOURCES.fbtRates
+var EV_FIRST_USE = '2022-07-01'; // SOURCES.evExempt
+var PHEV_CUTOFF = '2025-04-01'; // SOURCES.phev
+var EV_PHASE2 = '2027-04-01'; // SOURCES.evChange
+var EV_PHASE3 = '2029-04-01'; // SOURCES.evChange
+var EV_FULL_CAP = 75000; // SOURCES.evChange
+var EV_DISCOUNT_RATE = 0.15; // SOURCES.evChange
+var CAR_TYPES = { // SOURCES.assumeFuel
+  ev: { name: 'Electric', fuel: 765, hint: 'About 15,000 km at 17 kWh per 100 km and $0.30 per kWh. Example only' },
+  phev: { name: 'Plug-in hybrid', fuel: 1360, hint: 'Half of 15,000 km on power, half at 6.5 L per 100 km and $2.00 per litre. Example only' },
+  ice: { name: 'Petrol, diesel or regular hybrid', fuel: 2100, hint: 'About 15,000 km at 7 L per 100 km and $2.00 per litre. Example only' }
+};
+
+// The statutory rate for this lease, why, and which sources say so. A rate of 0 means exempt.
+function fbtStatus(i) {
+  var full = { rate: STATUTORY_RATE, exempt: false };
+  if (i.noExemption) return Object.assign(full, { why: 'The box "Model without the FBT exemption" is ticked.', src: ['statutory'] });
+  if (i.carType === 'ice') return Object.assign(full, { why: 'Only battery electric and hydrogen fuel cell cars qualify for the electric car exemption.', src: ['evExempt', 'statutory'] });
+  if (i.startDate < EV_FIRST_USE) return Object.assign(full, { why: 'The exemption covers cars first used on or after 1 July 2022.', src: ['evExempt'] });
+  if (i.price > LCT_FUEL_EFFICIENT) return Object.assign(full, { why: 'The price is above the luxury car tax threshold for fuel-efficient cars ($91,661 for 2026-27). A car above it does not qualify.', src: ['evExempt', 'lct'] });
+  if (i.carType === 'phev') {
+    if (i.startDate >= PHEV_CUTOFF) return Object.assign(full, { why: 'Plug-in hybrids lost the exemption on 1 April 2025. A plug-in hybrid first used from that day pays FBT.', src: ['phev'] });
+    return { rate: 0, exempt: true, why: 'A plug-in hybrid first used before 1 April 2025 keeps the exemption to the end of the lease signed then. An optional extension loses it.', src: ['phev'] };
+  }
+  if (i.startDate < EV_PHASE2) return { rate: 0, exempt: true, why: 'An electric car first used on or after 1 July 2022, priced under the LCT threshold, is exempt. A lease that starts before 1 April 2027 keeps the full exemption for its whole term under the announced changes.', src: ['evExempt', 'evChange'] };
+  if (i.startDate < EV_PHASE3 && i.price <= EV_FULL_CAP) return { rate: 0, exempt: true, announced: true, why: 'Announced, not yet law: a lease that starts from 1 April 2027 to 31 March 2029 on an electric car costing $75,000 or less keeps the full exemption, through a 0% statutory rate.', src: ['evChange'] };
+  return { rate: EV_DISCOUNT_RATE, exempt: false, announced: true, why: i.startDate < EV_PHASE3
+    ? 'Announced, not yet law: from 1 April 2027 an electric car costing more than $75,000 gets a 25% FBT discount, through a 15% statutory rate.'
+    : 'Announced, not yet law: from 1 April 2029 every electric car under the LCT threshold gets a 25% FBT discount, through a 15% statutory rate.', src: ['evChange'] };
+}
 
 function pmt(ratePerMonth, n, pv, fv) {
   fv = fv || 0;
@@ -312,7 +433,7 @@ function simulate(i, startBalance, yearCash, salaryTaxable, endPayment) {
 
 function calc(i) {
   var n = i.years * 12;
-  var duty = stampDuty(i.state, i.price);
+  var duty = stampDuty(i);
   var upfront = i.price + duty;
 
   // Novated lease: the employer claims the GST back, capped by the car limit. Stamp duty has no GST and is financed.
@@ -322,14 +443,34 @@ function calc(i) {
   var residual = financed * i.balloonPct / 100;
   var balloon = residual * (1 + GST);
   var leaseMonthly = pmt(i.leaseRate / 1200, n, financed, residual);
-  // Running costs paid through the lease: GST is recovered on insurance and servicing.
+  // Running costs paid through the lease: GST is recovered on insurance, servicing and bought fuel.
+  // Home charging of an electric car is reimbursed with no GST saving.
   var runningFull = i.rego + i.insurance + i.service + i.charging;
-  var leaseRunningPre = i.rego + (i.insurance + i.service) / (1 + GST) + (i.chargingInLease ? i.charging : 0);
+  var fuelPre = i.carType === 'ev' ? i.charging : i.charging / (1 + GST);
+  var leaseRunningPre = i.rego + (i.insurance + i.service) / (1 + GST) + (i.chargingInLease ? fuelPre : 0);
   var leaseRunningPost = i.chargingInLease ? 0 : i.charging;
-  var leasePretaxYear = leaseMonthly * 12 + i.fee + leaseRunningPre;
+  var packageYear = leaseMonthly * 12 + i.fee + leaseRunningPre;
+
+  // FBT, statutory formula: a share of the base value a year. The base value is the price with GST, without stamp duty and rego.
+  var fbt = fbtStatus(i);
+  var statutory = fbt.rate * i.price;
+  var ecm = 0, ecmGst = 0, fbtTax = 0, rfba = 0, reportableValue = 0;
+  if (fbt.exempt) {
+    // Under current law the exempt benefit is still valued at 20% and reported once over $2,000.
+    // The announced 0% rate leaves no taxable value to report.
+    reportableValue = fbt.announced ? 0 : STATUTORY_RATE * i.price;
+    rfba = reportableValue > REPORTABLE_OVER ? reportableValue * GROSS_UP_TYPE2 : 0;
+  } else {
+    // A post-tax contribution equal to the taxable value takes it to zero. The employer pays one eleventh of it as GST.
+    ecm = Math.min(statutory, packageYear * (1 + GST));
+    ecmGst = ecm / 11;
+    // Any taxable value left after the contribution is taxed and charged to the package.
+    fbtTax = (statutory - ecm) * GROSS_UP_TYPE1 * FBT_RATE;
+  }
+  var leasePretaxYear = packageYear - (ecm - ecmGst) + fbtTax;
   var leaseTaxable = i.salary - leasePretaxYear;
   var leaseTax = taxOn(leaseTaxable);
-  var leaseYearCash = i.salary - leasePretaxYear - leaseTax.total - leaseRunningPost;
+  var leaseYearCash = i.salary - leasePretaxYear - leaseTax.total - leaseRunningPost - ecm;
 
   // Loan: price and stamp duty borrowed, repayments come out of take-home pay.
   var loanMonthly = pmt(i.loanRate / 1200, n, upfront, 0);
@@ -358,49 +499,98 @@ function calc(i) {
     lease: lease, loan: loan, cash: cash, noCar: noCar, years: years,
     leaseEnd: lease.end, loanEnd: loan.end, cashEnd: cash.end, noCarEnd: noCar.end,
     leaseCost: noCar.end - lease.end, loanCost: noCar.end - loan.end, cashCost: noCar.end - cash.end,
-    leaseTotalPaid: leaseMonthly * n + i.fee * i.years + balloon + (leaseRunningPre + leaseRunningPost) * i.years,
+    leaseTotalPaid: leaseMonthly * n + i.fee * i.years + balloon + (leaseRunningPre + leaseRunningPost + ecmGst + fbtTax) * i.years,
     loanTotalPaid: loanMonthly * n + runningFull * i.years,
     cashTotalPaid: upfront + runningFull * i.years,
     runningFull: runningFull, leaseRunningPre: leaseRunningPre, leaseRunningPost: leaseRunningPost,
     leaseRunningYear: leaseRunningPre + leaseRunningPost,
-    leaseTaxSavingYear: loanTax.total - leaseTax.total
+    leaseTaxSavingYear: loanTax.total - leaseTax.total,
+    fbt: fbt, statutory: statutory, reportableValue: reportableValue, ecm: ecm, ecmGst: ecmGst, fbtTax: fbtTax, rfba: rfba, packageYear: packageYear
   };
 }
 
-// Stamp duty on a new battery electric passenger car, from each revenue office's published rules.
-// The rules are not checked against 2026-27 changes, so the page shows the formula next to the result.
+// Stamp duty on a new passenger car, from each revenue office (SOURCES.dutyNSW to SOURCES.dutyNT).
+// The page shows the formula and the source next to the result.
 function per(v, step, rate) { return Math.ceil(v / step) * rate; }
+// ACT bands: under $45,000, $45,000 to $80,000, over $80,000. The rates come from the emissions category.
+function actBands(v, r1, r2) {
+  if (v <= 45000) return per(v, 100, r1);
+  var at80 = 45000 * r1 / 100 + 35000 * r2 / 100;
+  if (v <= 80000) return 45000 * r1 / 100 + per(v - 45000, 100, r2);
+  return at80 + per(v - 80000, 100, 8);
+}
+var ACT_RATES = { // SOURCES.dutyACT, category per car type: SOURCES.assumeDutyType
+  ev: { cat: 'AAA, zero emissions', before: [2.5, 4], from: [2.5, 4] },
+  phev: { cat: 'AA, 1 to 65 g/km, usual for a plug-in hybrid', before: [2.67, 4.41], from: [2.67, 4.41] },
+  ice: { cat: 'B, 131 to 175 g/km, usual for a small petrol car', before: [3, 5.22], from: [3.25, 5.59] }
+};
+var ACT_NEW_RATES = '2027-02-01'; // SOURCES.dutyACT
+var NT_EV_CONCESSION_END = '2027-06-30'; // SOURCES.dutyNT
 var DUTY = {
-  NSW: { text: '$3 per $100 up to $45,000, then $1,350 + $5 per $100 above',
+  NSW: { src: ['dutyNSW'], text: function () { return 'Any car: $3 per $100 up to $45,000, then $1,350 + $5 per $100 above'; },
     fn: function (v) { return v <= 45000 ? per(v, 100, 3) : 1350 + per(v - 45000, 100, 5); } },
-  VIC: { text: '$8.40 per $200 (4.2%) for a low emission car up to the fuel-efficient LCT threshold',
-    fn: function (v) { return per(v, 200, 8.4); } },
-  QLD: { text: 'Electric car: $2 per $100 up to $100,000, then $4 per $100',
-    fn: function (v) { return v <= 100000 ? per(v, 100, 2) : 2000 + per(v - 100000, 100, 4); } },
-  SA: { text: '$60 + $4 per $100 above $3,000 (lower rates under $3,000)',
+  VIC: { src: ['dutyVIC', 'assumeDutyType'],
+    text: function (t) {
+      return t === 'ice'
+        ? 'Other car: $8.40 per $200 up to $80,809, $10.40 per $200 to $100,000, $14 to $150,000, $18 above, on the whole price'
+        : 'Green car (120 g/km CO2 or less, electric and most plug-in hybrids): $8.40 per $200 at any price';
+    },
+    fn: function (v, t) {
+      if (t !== 'ice' || v <= 80809) return per(v, 200, 8.4);
+      if (v <= 100000) return per(v, 200, 10.4);
+      if (v <= 150000) return per(v, 200, 14);
+      return per(v, 200, 18);
+    } },
+  QLD: { src: ['dutyQLD', 'assumeDutyType'],
+    text: function (t) {
+      return t === 'ice'
+        ? '4 cylinders assumed: $3 per $100 up to $100,000, $5 per $100 on the whole price above'
+        : 'Electric or hybrid: $2 per $100 up to $100,000, $4 per $100 on the whole price above';
+    },
+    fn: function (v, t) {
+      var lo = t === 'ice' ? 3 : 2, hi = t === 'ice' ? 5 : 4;
+      return per(v, 100, v <= 100000 ? lo : hi);
+    } },
+  SA: { src: ['dutySA'], text: function () { return 'Any car: $60 + $4 per $100 above $3,000 (lower rates under $3,000)'; },
     fn: function (v) {
       if (v <= 1000) return Math.max(5, per(v, 100, 1));
       if (v <= 2000) return 10 + per(v - 1000, 100, 2);
       if (v <= 3000) return 30 + per(v - 2000, 100, 3);
       return 60 + per(v - 3000, 100, 4);
     } },
-  WA: { text: '2.75% up to $25,000, a rate rising to 6.5% between $25,000 and $50,000, 6.5% above',
+  WA: { src: ['dutyWA'], text: function () { return 'Any car: 2.75% up to $25,000, a rate rising to 6.5% between $25,000 and $50,000, 6.5% above'; },
     fn: function (v) {
       if (v <= 25000) return v * 0.0275;
       if (v <= 50000) return v * Math.round((2.75 + (v - 25000) / 6666.66) * 100) / 10000;
       return v * 0.065;
     } },
-  TAS: { text: '$3 per $100 up to $35,000, $1,050 + $11 per $100 to $40,000, then $4 per $100 on the whole price',
+  TAS: { src: ['dutyTAS'], text: function () { return 'Any car: $3 per $100 up to $35,000, $1,050 + $11 per $100 to $40,000, then $4 per $100 on the whole price'; },
     fn: function (v) {
       if (v <= 600) return 20;
       if (v <= 35000) return per(v, 100, 3);
       if (v <= 40000) return 1050 + per(v - 35000, 100, 11);
       return per(v, 100, 4);
     } },
-  ACT: { text: 'Zero emission car: exempt', fn: function () { return 0; } },
-  NT: { text: '3% of the price', fn: function (v) { return v * 0.03; } }
+  ACT: { src: ['dutyACT', 'assumeDutyType'],
+    text: function (t, d) {
+      var a = ACT_RATES[t], r = d >= ACT_NEW_RATES ? a.from : a.before;
+      return 'Category ' + a.cat + ', rates ' + (d >= ACT_NEW_RATES ? 'from 1 February 2027' : 'from 1 September 2025 to 31 January 2027') +
+        ': $' + r[0] + ' per $100 up to $45,000, then $' + r[1] + ' per $100 to $80,000, then $8 per $100';
+    },
+    fn: function (v, t, d) {
+      var a = ACT_RATES[t], r = d >= ACT_NEW_RATES ? a.from : a.before;
+      return actBands(v, r[0], r[1]);
+    } },
+  NT: { src: ['dutyNT'],
+    text: function (t, d) {
+      return t !== 'ice' && d <= NT_EV_CONCESSION_END
+        ? 'Electric or plug-in hybrid registered by 30 June 2027: 3% of the price above $50,000. Rego is also free, CTP is still paid'
+        : '3% of the price';
+    },
+    fn: function (v, t, d) { return t !== 'ice' && d <= NT_EV_CONCESSION_END ? Math.max(0, v - 50000) * 0.03 : v * 0.03; } }
 };
-function stampDuty(state, price) { return Math.max(0, DUTY[state].fn(Math.max(price, 0))); }
+function stampDuty(i) { return Math.max(0, DUTY[i.state].fn(Math.max(i.price, 0), i.carType, i.startDate)); }
+function dutyText(i) { return DUTY[i.state].text(i.carType, i.startDate); }
 
 var ids = ['salary','price','years','leaseRate','balloonPct','fee','loanRate','start','accountRate','rego','insurance','service','charging'];
 function $(id) { return document.getElementById(id); }
@@ -429,18 +619,30 @@ function readInputs() {
   o.chargingInLease = $('chargingInLease').checked;
   o.state = $('state').value;
   o.account = $('account').value;
+  o.carType = $('carType').value;
+  o.noExemption = $('noExemption').checked;
+  o.startDate = $('startDate').value || today();
   return o;
+}
+function today() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 function render() {
   var i = readInputs();
   var r = calc(i);
   var savings = i.account === 'savings';
 
-  $('dutyLabel').textContent = 'Stamp duty in ' + i.state;
+  $('dutyLabel').innerHTML = 'Stamp duty in ' + i.state + info(DUTY[i.state].src);
   $('pDuty').textContent = usd(r.duty, true);
   $('pGst').textContent = usd(r.gstCredit, true);
   $('pFinanced').textContent = usd(r.financed, true);
   $('pLease').textContent = usd(r.leaseMonthly, true);
+  $('fbtSrc').innerHTML = info(r.fbt.src);
+  $('pFbt').textContent = r.fbt.exempt ? 'exempt' : (r.fbtTax > 0.005 ? usd(r.fbtTax, true) + ' per year' : '$0 after the contribution, ' + pct(r.fbt.rate) + ' rate');
+  $('pEcm').textContent = r.ecm > 0 ? usd(r.ecm, true) : 'none';
+  $('pRfba').textContent = r.rfba > 0 ? usd(r.rfba, true) : 'none';
+  $('chargingHint').textContent = CAR_TYPES[i.carType].hint;
   $('pResidual').textContent = usd(r.residual, true);
   $('pBalloon').textContent = usd(r.balloon, true);
   $('pLoan').textContent = usd(r.loanMonthly, true);
@@ -458,16 +660,16 @@ function render() {
     var gap = ends[k] - best;
     $('s' + k).textContent = gap >= -0.5 ? 'Best of the three' : usd(gap) + ' compared with the highest';
   });
-  $('balNote').textContent = 'In all three cases you own the car at the end. Car resale value is not included. The balance earns ' +
+  $('balNote').innerHTML = esc('In all three cases you own the car at the end. Car resale value is not included. The balance earns ' +
     i.accountRate + '% a year, ' + (savings ? 'taxed as savings interest.' : 'tax free as an offset against the mortgage.') +
-    ' A balance below zero costs the same rate.';
+    ' A balance below zero costs the same rate.') + info('assumeRates');
 
   var yrs = i.years;
   var taxOf = { Lease: r.lease.tax, Loan: r.loan.tax, Cash: r.cash.tax };
   var lowestTax = Math.min(r.lease.tax.total, r.loan.tax.total, r.cash.tax.total);
-  $('taxIntro').textContent = 'Sum of ' + yrs + ' years. ' + (savings
+  $('taxIntro').innerHTML = esc('Sum of ' + yrs + ' years. ' + (savings
     ? 'Savings interest is added to taxable income, so the tax changes from year to year.'
-    : 'Salary is flat and offset interest is tax free, so every year is taxed the same.');
+    : 'Salary is flat and offset interest is tax free, so every year is taxed the same.')) + info(['tax', 'medicare']);
   ['Lease', 'Loan', 'Cash'].forEach(function (k) {
     var t = taxOf[k], total = t.total;
     $('x' + k).textContent = usd(total);
@@ -477,7 +679,7 @@ function render() {
     t.rows.forEach(function (b) {
       h += '<div class="tier"><span>' + pct(b.rate) + ' tier<small>' + tierLabel(b) + ': ' + usd(b.inBand) + ' taxed</small></span><b>' + usd(b.tax) + '</b></div>';
     });
-    h += '<div class="tier"><span>Medicare levy 2%<small>On ' + usd(t.taxable) + ' taxable income</small></span><b>' + usd(t.medicare) + '</b></div>';
+    h += '<div class="tier"><span>Medicare levy 2%' + info('medicare') + '<small>On ' + usd(t.taxable) + ' taxable income</small></span><b>' + usd(t.medicare) + '</b></div>';
     h += '<div class="tier sum"><span>Total tax</span><b>' + usd(total) + '</b></div>';
     $('t' + k).innerHTML = h;
   });
@@ -495,25 +697,31 @@ function render() {
   var w = '';
   w += head('Pay');
   w += row('Gross salary', usd(i.salary, true), usd(i.salary, true), usd(i.salary, true));
-  w += row('Lease payments, fees and running costs, pre-tax', '-' + usd(r.leasePretaxYear, true), '-', '-', 'sub');
+  w += row('Lease payments, fees and running costs, without GST' + info(['gst', 'assumeFuelGst']), '-' + usd(r.packageYear, true), '-', '-', 'sub');
+  if (!r.fbt.exempt) {
+    w += row('Less the post-tax contribution, without its GST' + info(['statutory', 'ecmGst']), '+' + usd(r.ecm - r.ecmGst, true), '-', '-', 'sub');
+    if (r.fbtTax > 0.005) w += row('FBT on the taxable value left, charged pre-tax' + info('fbtRates'), '-' + usd(r.fbtTax, true), '-', '-', 'sub');
+  }
   w += row('Taxable income from salary', usd(L.taxable, true), usd(N.taxable, true), usd(C.taxable, true), 'total');
-  w += head('Income tax on salary by tier, 2026-27');
+  w += head('Income tax on salary by tier, 2026-27' + info('tax'));
   for (var k = 0; k < L.rows.length; k++) {
     w += row(tierLabel(L.rows[k]), tierCell(L.rows[k]), tierCell(N.rows[k]), tierCell(C.rows[k]));
   }
   w += row('Income tax', usd(L.incomeTax, true), usd(N.incomeTax, true), usd(C.incomeTax, true), 'sub');
-  w += row('Medicare levy, 2%', usd(L.medicare, true), usd(N.medicare, true), usd(C.medicare, true), 'sub');
+  w += row('Medicare levy, 2%' + info('medicare'), usd(L.medicare, true), usd(N.medicare, true), usd(C.medicare, true), 'sub');
   w += row('Total tax on salary', usd(L.total, true), usd(N.total, true), usd(C.total, true), 'total');
   w += head('What is left');
   w += row('Take-home pay', usd(i.salary - r.leasePretaxYear - L.total, true), usd(r.loanTakeHome, true), usd(r.loanTakeHome, true));
   w += row('Loan repayments, after tax', '-', '-' + usd(r.loanMonthly * 12, true), '-', 'sub');
+  w += row('Post-tax contribution to the lease, with GST' + info(['statutory', 'ecmGst']), r.ecm > 0 ? '-' + usd(r.ecm, true) : '-', '-', '-', 'sub');
   w += row('Running costs paid from take-home pay', r.leaseRunningPost > 0 ? '-' + usd(r.leaseRunningPost, true) : '-', '-' + usd(r.runningFull, true), '-' + usd(r.runningFull, true), 'sub');
   w += row('Cash added to the account per year, before interest', usd(r.leaseYearCash, true), usd(r.loanYearCash, true), usd(r.cashYearCash, true), 'total');
   w += head('Over the whole term');
   w += row('Paid up front, price and stamp duty', '-', '-', usd(r.upfront, true), 'sub');
-  w += row('Balloon paid at the end, with GST', usd(r.balloon, true), '-', '-', 'sub');
+  w += row('Balloon paid at the end, with GST' + info(['residual', 'gst']), usd(r.balloon, true), '-', '-', 'sub');
   w += row('Tax saved per year compared with the loan', usd(r.leaseTaxSavingYear, true), '-', '-', 'sub');
   w += row('Running costs over the term', usd(r.leaseRunningYear * i.years, true), usd(r.runningFull * i.years, true), usd(r.runningFull * i.years, true), 'sub');
+  if (!r.fbt.exempt) w += row('GST on the post-tax contribution and FBT, over the term' + info(['ecmGst', 'fbtRates']), usd((r.ecmGst + r.fbtTax) * i.years, true), '-', '-', 'sub');
   w += row('Total paid for the car and running it, before tax savings', usd(r.leaseTotalPaid, true), usd(r.loanTotalPaid, true), usd(r.cashTotalPaid, true), 'total');
   w += row('Interest on the account', usd(r.lease.interest, true), usd(r.loan.interest, true), usd(r.cash.interest, true), 'sub');
   w += row('Tax on that interest', savings ? usd(r.lease.interestTax, true) : 'tax free', savings ? usd(r.loan.interestTax, true) : 'tax free', savings ? usd(r.cash.interestTax, true) : 'tax free', 'sub');
@@ -527,24 +735,140 @@ function render() {
   b += row('Final balance', usd(r.leaseEnd), usd(r.loanEnd), usd(r.cashEnd), 'total');
   $('bal').innerHTML = b;
 
-  $('formula').textContent =
-    'Stamp duty, ' + i.state + ': ' + DUTY[i.state].text + ' = ' + usd(r.duty, true) + '\n' +
-    'GST credit = min(price / 11, car limit / 11) = min(' + usd(i.price / 11, true) + ', ' + usd(CAR_LIMIT / 11, true) + ') = ' + usd(r.gstCredit, true) + '\n' +
-    'Financed = price - GST credit + stamp duty = ' + usd(i.price, true) + ' - ' + usd(r.gstCredit, true) + ' + ' + usd(r.duty, true) + ' = ' + usd(r.financed, true) + '\n' +
-    'Residual = financed x ' + i.balloonPct + '% = ' + usd(r.residual, true) + ', balloon with GST = residual x 1.10 = ' + usd(r.balloon, true) + '\n' +
-    'r = ' + i.leaseRate + '% / 12 = ' + (i.leaseRate / 12).toFixed(4) + '% per month, n = ' + r.n + ' months\n' +
-    'Payment = (Financed - Residual / (1+r)^n) x r / (1 - (1+r)^-n)\n' +
-    '        = ' + usd(r.leaseMonthly, true) + ' per month, paid at the end of each month';
+  var duty = DUTY[i.state];
+  $('formula').innerHTML = lines([
+    ['Stamp duty, ' + i.state + ': ' + dutyText(i) + ' = ' + usd(r.duty, true), duty.src],
+    ['GST credit = min(price / 11, car limit / 11) = min(' + usd(i.price / 11, true) + ', ' + usd(CAR_LIMIT / 11, true) + ') = ' + usd(r.gstCredit, true), ['gst', 'carLimit']],
+    ['Financed = price - GST credit + stamp duty = ' + usd(i.price, true) + ' - ' + usd(r.gstCredit, true) + ' + ' + usd(r.duty, true) + ' = ' + usd(r.financed, true), ['carLimit']],
+    ['Residual = financed x ' + i.balloonPct + '% = ' + usd(r.residual, true) + ', balloon with GST = residual x 1.10 = ' + usd(r.balloon, true), ['residual', 'gst']],
+    ['r = ' + i.leaseRate + '% / 12 = ' + (i.leaseRate / 12).toFixed(4) + '% per month, n = ' + r.n + ' months', ['assumeRates']],
+    ['Payment = (Financed - Residual / (1+r)^n) x r / (1 - (1+r)^-n)'],
+    ['        = ' + usd(r.leaseMonthly, true) + ' per month, paid at the end of each month']
+  ]);
+  $('fbtNote').innerHTML = lines(fbtExplain(i, r, today()));
 
   var msgs = [];
-  if (i.price > LCT_FUEL_EFFICIENT) msgs.push('The price is above the luxury car tax threshold for fuel-efficient vehicles ($91,661 for 2026-27). The FBT exemption does not apply, so the lease result is not valid.');
-  if (i.balloonPct < RESIDUAL[i.years] - 0.005) msgs.push('The ATO minimum balloon for a ' + i.years + '-year lease is ' + RESIDUAL[i.years] + '%. A lower value is not accepted by lenders.');
+  if (today() > TAX_YEAR_END) msgs.push(esc('Tax rates, thresholds and FBT rules on this page are for 2026-27, checked on ' + RULES_CHECKED + '. Check them for the current year.') + info(['tax', 'fbtRates']));
+  if (i.carType !== 'ice' && i.price > LCT_FUEL_EFFICIENT) msgs.push(esc('The price is above the luxury car tax threshold for fuel-efficient cars ($91,661 for 2026-27). The car gets no FBT exemption, so the lease includes a post-tax contribution.') + info(['lct', 'evExempt']));
+  if (i.balloonPct < RESIDUAL[i.years] - 0.005) msgs.push(esc('The ATO minimum balloon for a ' + i.years + '-year lease is ' + RESIDUAL[i.years] + '%. A lower value is not accepted by lenders.') + info('residual'));
   var flag = $('flag');
-  if (msgs.length) { flag.hidden = false; flag.textContent = msgs.join(' '); } else { flag.hidden = true; }
+  if (msgs.length) { flag.hidden = false; flag.innerHTML = msgs.join(' '); } else { flag.hidden = true; }
+}
+
+// Lines for the FBT card: the result, the reason, the formula and the rules by start date. Each line names its sources.
+function fbtExplain(i, r, now) {
+  var f = r.fbt, out = [];
+  var verdict = f.exempt ? 'exempt from FBT.' : f.rate < STATUTORY_RATE ? 'FBT at a 15% statutory rate, a 25% discount.' : 'no FBT exemption.';
+  out.push([CAR_TYPES[i.carType].name + ', first used ' + i.startDate + ', price ' + usd(i.price) + ': ' + verdict, f.src]);
+  out.push(['Why: ' + f.why, f.src]);
+  out.push(['']);
+  if (f.exempt && r.reportableValue > 0) {
+    out.push(['Value for reporting = 20% x base value ' + usd(i.price, true) + ' = ' + usd(r.reportableValue, true) + ' per year', ['statutory', 'evExempt']]);
+    out.push(['Reportable fringe benefit = ' + usd(r.reportableValue, true) + ' x 1.8868 = ' + usd(r.rfba, true) + ' per year', ['fbtRates']]);
+    out.push(['It is not taxed. It counts for the Medicare levy surcharge, HELP repayments, family payments and child support.', ['rfba']]);
+  } else if (f.exempt) {
+    out.push(['The announced 0% statutory rate leaves a taxable value of $0, so there is nothing to report. Not yet law.', ['evChange', 'fbtRates']]);
+  } else {
+    out.push(['Taxable value = ' + pct(f.rate) + ' x base value ' + usd(i.price, true) + ' = ' + usd(r.statutory, true) + ' per year', f.rate < STATUTORY_RATE ? ['statutory', 'evChange'] : ['statutory']]);
+    out.push(['Base value = the price with GST and dealer delivery, without stamp duty and rego', ['statutory']]);
+    out.push(['Post-tax contribution = ' + usd(r.ecm, true) + ' per year from take-home pay. The taxable value left is ' + usd(r.statutory - r.ecm, true), ['statutory']]);
+    out.push(['GST the employer pays on it = ' + usd(r.ecm, true) + ' / 11 = ' + usd(r.ecmGst, true) + '. The pre-tax part drops by ' + usd(r.ecm - r.ecmGst, true), ['ecmGst']]);
+    if (r.fbtTax > 0.005) {
+      out.push(['The contribution is capped at the yearly package with GST. FBT on the rest = ' + usd(r.statutory - r.ecm, true) + ' x 2.0802 x 47% = ' + usd(r.fbtTax, true) + ' per year, charged pre-tax', ['fbtRates']]);
+    }
+    out.push(['Not modelled: the base value drops by a third after 4 years. A 5-year lease would need a smaller contribution near the end.', ['oneThird']]);
+  }
+  out.push(['']);
+  if (i.carType === 'ev') {
+    var phase = i.startDate < EV_PHASE2 ? 1 : i.startDate < EV_PHASE3 ? 2 : 3;
+    var here = function (p) { return p === phase ? '   <- this start date' : ''; };
+    out.push(['Electric car FBT by start date. Announced 5 May 2026, not yet law on ' + RULES_CHECKED, ['evChange']]);
+    out.push(['- Start before 1 April 2027: full exemption for the whole lease' + here(1), ['evExempt', 'evChange']]);
+    out.push(['- Start 1 April 2027 to 31 March 2029: full exemption at $75,000 or less, 15% statutory rate above' + here(2), ['evChange']]);
+    out.push(['- Start from 1 April 2029: 15% statutory rate at any price under the LCT threshold' + here(3), ['evChange', 'lct']]);
+    out.push(['- A lease keeps the rules it started with. Refinancing or a new lease starts again under the rules of that day.', ['evChange']]);
+    out.push(['- The announcement does not define the $75,000 price. The page compares it with the car price input.', ['evChange']]);
+    out.push([now < EV_PHASE2
+      ? '- Today is ' + now + '. A lease that starts by 31 March 2027 keeps the full exemption.'
+      : '- Today is ' + now + ', after 1 April 2027. Check on ato.gov.au whether the change became law and in what form.', ['evChange']]);
+  } else if (i.carType === 'phev') {
+    out.push(['Plug-in hybrids: no exemption for a car first used from 1 April 2025. One used before then keeps it to the end of the fixed lease term, without optional extensions.', ['phev']]);
+  } else {
+    out.push(['Petrol, diesel and regular hybrid cars have no FBT concession. Only the full 20% rule applies.', ['statutory', 'evExempt']]);
+  }
+  return out;
+}
+
+// One line per item: escaped text, then the i icon for its sources.
+function lines(list) {
+  return list.map(function (l) { return '<div>' + (esc(l[0]) || '&nbsp;') + (l[1] && l[1].length ? info(l[1]) : '') + '</div>'; }).join('');
+}
+
+function esc(t) {
+  return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// The i icon. Its tooltip names each source, the value used, and links to the page it came from.
+function info(keys) {
+  keys = [].concat(keys);
+  var body = keys.map(function (k) {
+    var s = SOURCES[k];
+    if (!s) throw new Error('SOURCES.' + k + ' must exist');
+    var links = s.links
+      ? s.links.map(function (l) { return '<a href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + esc(l[0]) + '</a>'; }).join('<br>') + '<br><small>Checked on ' + RULES_CHECKED + '</small>'
+      : '<span class="tip-assume">' + esc(s.note || 'Assumption, no source. Change the input to your own number.') + '</span>';
+    return '<b>' + esc(s.name) + '</b><br>' + esc(s.value) + '<br>' + links;
+  }).join('<hr style="border:0;border-top:1px solid var(--line);margin:6px 0">');
+  var names = keys.map(function (k) { return SOURCES[k].name; }).join(', ');
+  return '<span class="i" tabindex="0" role="button" aria-label="Source: ' + esc(names) + '">i<span class="tip" role="tooltip">' + body + '</span></span>';
+}
+
+// Tooltips use fixed positioning so tables and formula boxes with scrollbars do not clip them.
+function placeTip(icon) {
+  var tip = icon.querySelector('.tip');
+  if (!tip) return;
+  var r = icon.getBoundingClientRect(), w = Math.min(340, window.innerWidth - 16);
+  tip.style.width = w + 'px';
+  tip.style.left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), window.innerWidth - w - 8) + 'px';
+  var below = r.bottom + 2;
+  tip.style.top = below + 'px';
+  var h = tip.offsetHeight;
+  if (h && below + h > window.innerHeight - 8 && r.top - h - 2 > 8) tip.style.top = (r.top - h - 2) + 'px';
+}
+['mouseover', 'focusin'].forEach(function (ev) {
+  document.addEventListener(ev, function (e) {
+    var icon = e.target.closest && e.target.closest('.i');
+    if (icon) placeTip(icon);
+  });
+});
+// A click on an icon inside a label should open the tooltip, not focus the input.
+document.addEventListener('click', function (e) {
+  var icon = e.target.closest && e.target.closest('.i');
+  if (icon && !e.target.closest('a')) { e.preventDefault(); icon.focus(); placeTip(icon); }
+});
+
+function fillStaticSources() {
+  Array.prototype.forEach.call(document.querySelectorAll('[data-src]'), function (el) {
+    el.outerHTML = info(el.getAttribute('data-src').split(','));
+  });
+  var rows = Object.keys(SOURCES).map(function (k) {
+    var s = SOURCES[k];
+    var src = s.links
+      ? s.links.map(function (l) { return '<a href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + esc(l[0]) + '</a>'; }).join('<br>') + '<br><small class="lbl">Checked on ' + RULES_CHECKED + '</small>'
+      : '<span style="color:var(--warn)">' + esc(s.note || 'Assumption, no source') + '</span>';
+    return '<tr><td>' + esc(s.name) + '</td><td>' + esc(s.value) + '</td><td>' + src + '</td></tr>';
+  });
+  $('sources').innerHTML = rows.join('');
 }
 
 ids.forEach(function (id) { $(id).addEventListener('input', render); });
-['chargingInLease', 'state', 'account'].forEach(function (id) { $(id).addEventListener('change', render); });
+['chargingInLease', 'state', 'account', 'noExemption', 'startDate'].forEach(function (id) { $(id).addEventListener('change', render); });
+$('carType').addEventListener('change', function () {
+  $('charging').value = CAR_TYPES[$('carType').value].fuel;
+  render();
+});
+$('startDate').value = today();
+fillStaticSources();
 $('years').addEventListener('change', function () {
   $('balloonPct').value = RESIDUAL[parseInt($('years').value, 10)];
   render();
