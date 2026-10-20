@@ -6,13 +6,19 @@ A single-page calculator for **Australia only**. It compares three ways to pay f
 - **Car loan.** The full price is borrowed and repaid from take-home pay.
 - **Cash purchase.** The full price leaves the account on day one.
 
-The page shows, in this order: the parameters, the **account balance after the term** for each option, and the **total cost of the car** for each option. Total cost is the balance you would have with no car at all (same salary, same tax) minus the balance in that option.
+The page has one screen of content, in this order:
+
+1. **Your car.** Salary, price, car type, state, term and start date. Rates, running costs and the account sit under "More settings".
+2. **Total cost of the car** for each option, with the monthly payment, the account at the end and the income tax over the term. Total cost is the balance you would have with no car at all (same salary, same tax) minus the balance in that option.
+3. **How it is worked out** and **Sources for every number**, folded until you open them.
 
 Open `index.html` in a browser. There is no build step and no dependencies.
 
-Every step of the calculation is shown on the page: stamp duty, the lease payment formula, FBT, income tax by tier, cash left per year, and the balance year by year.
+Every step of the calculation is under "How it is worked out": income tax by tier, cash left per year, the balance year by year, FBT, stamp duty and the lease payment formula.
 
-Every fixed number has a source. An **i** icon next to it opens a tooltip with the value, a link to the official page, and the date it was checked. The section "Sources for every number" at the bottom of the page lists all of them. In the code they sit in the `SOURCES` object at the top of the script, and each constant names its entry in a comment. A number with no source is marked as an assumption.
+Every fixed number has a source. An **i** icon next to it opens a tooltip with the value, a link to the official page, and the date it was checked. The section "Sources for every number" at the bottom of the page lists all of them. A number with no source is marked as an assumption.
+
+In the code, the constants sit at the top of the script and each names its `SOURCES` entry in a comment. Every text that mentions a number is built from its constant, so a rule changes in one place. Each state's stamp duty rates sit once in the `DUTY` table, and both the formula and its description read them.
 
 ## Running costs
 
@@ -49,8 +55,8 @@ The car type only changes the novated lease, through fringe benefits tax (FBT), 
 - **Price limit.** An electric car above the luxury car tax threshold for fuel-efficient cars ($91,661 for 2026-27) gets no exemption.
 - **Without the exemption** the employee pays a post-tax contribution equal to the taxable value: 20% (or 15%) of the price each year. The FBT is then $0. The employer pays one eleventh of the contribution as GST, so the pre-tax part drops by ten elevenths of it.
 - **With the exemption** the benefit is still reported on the income statement, at 20% of the price x 1.8868. It is not taxed, but counts for the Medicare levy surcharge, HELP repayments, family payments and child support.
-- **The start date** decides the rules. The page explains them under "Fringe benefits tax for this car" and marks which one applies.
-- **Existing leases keep their rules**, as the announcement says. The checkbox "Model without the FBT exemption" shows the lease under the full 20% rule for comparison.
+- **The start date** decides the rules. The result card names the rule that applies. "How it is worked out" lists every rule by start date.
+- **Existing leases keep their rules**, as the announcement says. The checkbox "Lease without the FBT exemption" shows the lease under the full 20% rule for comparison.
 
 Sources: [ATO electric cars exemption](https://www.ato.gov.au/businesses-and-organisations/hiring-and-paying-your-workers/fringe-benefits-tax/types-of-fringe-benefits/fbt-on-cars-other-vehicles-parking-and-tolls/electric-cars-exemption), [ATO plug-in hybrids](https://www.ato.gov.au/businesses-and-organisations/hiring-and-paying-your-workers/fringe-benefits-tax/types-of-fringe-benefits/fbt-on-cars-other-vehicles-parking-and-tolls/fbt-on-plug-in-hybrid-electric-vehicles), [ATO announced changes](https://www.ato.gov.au/about-ato/new-legislation/in-detail/businesses/electric-car-discount-more-sustainable-fbt-treatment-of-electric-cars), [Treasury media release, 5 May 2026](https://ministers.treasury.gov.au/ministers/jim-chalmers-2022/media-releases/fairer-tax-treatment-encourage-affordable-evs), [ATO statutory formula](https://www.ato.gov.au/businesses-and-organisations/hiring-and-paying-your-workers/fringe-benefits-tax/types-of-fringe-benefits/fbt-on-cars-other-vehicles-parking-and-tolls/cars-and-fbt/taxable-value-of-a-car-fringe-benefit), [ATO FBT rates](https://www.ato.gov.au/tax-rates-and-codes/fringe-benefits-tax-rates-and-thresholds), [ATO reportable fringe benefits](https://www.ato.gov.au/individuals-and-families/jobs-and-employment-types/working-as-an-employee/reportable-fringe-benefits-for-employees/consequences-of-having-a-reportable-fringe-benefits-amount), [GSTR 2001/3](https://www.ato.gov.au/law/view/document?docid=GST/GSTR20013/NAT/ATO/00001).
 
@@ -95,7 +101,7 @@ These are the inputs a novated lease quote is built from:
 
 The monthly payment is not an input. It is calculated from the rate, term and balloon. If a provider gives you a monthly payment instead, adjust the interest rate until the payment on the page matches.
 
-Other inputs: gross salary (excluding super), a loan interest rate for the comparison (default 9%, an estimate, not market data), a starting account balance, the account type and its interest rate, the four yearly running costs, and a checkbox that models the lease without the FBT exemption.
+Other inputs, most of them under "More settings": gross salary (excluding super), a loan interest rate for the comparison (default 9%, an estimate, not market data), a starting account balance, the account type and its interest rate, the four yearly running costs, and a checkbox that models the lease without the FBT exemption.
 
 ## Tax used: 2026-27 resident rates
 
