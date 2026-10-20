@@ -12,9 +12,14 @@ Open `index.html` in a browser. There is no build step and no dependencies.
 
 Every step of the calculation is shown on the page: the lease payment formula, income tax by tier, cash left per year, and the balance year by year.
 
-## What the calculator does not include
+## Running costs
 
-Running costs (insurance, registration, CTP, servicing, charging), super, car resale value and early termination fees are left out on purpose. Provider fees can be entered as an input and default to $0.
+Rego and CTP, insurance, servicing and tyres, and charging are included in all three options, because the car costs the same to run however it is paid for. What differs is how they are paid:
+
+- **Novated lease.** Paid through the lease before tax. GST is recovered on insurance and servicing, so those cost one eleventh less. Rego and CTP carry no GST. Home charging can be reimbursed pre-tax by the provider (a checkbox turns this off).
+- **Car loan and cash.** Paid from take-home pay, GST included.
+
+Costs are flat per year with no inflation. Super, car resale value and early termination fees are left out on purpose. Provider fees can be entered as an input and default to $0.
 
 ## Inputs
 
@@ -37,7 +42,7 @@ These are the inputs a novated lease quote is built from:
 
 The monthly payment is not an input. It is calculated from the rate, term and balloon. If a provider gives you a monthly payment instead, adjust the interest rate until the payment on the page matches.
 
-Other inputs: gross salary (excluding super), a loan interest rate for the comparison, and a starting account balance.
+Other inputs: gross salary (excluding super), a loan interest rate for the comparison, a starting account balance, and the four yearly running costs.
 
 ## Tax used: 2026-27 resident rates
 
@@ -56,12 +61,12 @@ Source: [ATO individual income tax rates](https://www.ato.gov.au/tax-rates-and-c
 ## How the numbers are worked out
 
 1. **Lease payment.** The lease finances the price without GST (price / 1.10), because the employer claims the GST back. Payment = (financed - balloon / (1 + r)^n) x r / (1 - (1 + r)^-n), with r the monthly rate and n the number of months.
-2. **Lease tax.** The lease payments and fees come out of salary before tax. Taxable income = salary - yearly lease payments - fees. Tax is calculated tier by tier, plus Medicare.
-3. **Loan.** The loan finances the full price including GST. Repayments come out of take-home pay after tax.
-4. **Cash per year.** Lease: salary - pre-tax lease payments - tax. Loan: salary - tax - repayments.
-5. **Cash purchase.** The price is taken from the account at the start, so the balance can begin below zero. Cash added per year equals take-home pay, and tax is the same as with the loan. Interest the money could have earned is not counted.
+2. **Lease tax.** The lease payments, fees and running costs come out of salary before tax. Taxable income = salary - yearly lease payments - fees - running costs (GST removed from insurance and servicing). Tax is calculated tier by tier, plus Medicare.
+3. **Loan.** The loan finances the full price including GST. Repayments and running costs come out of take-home pay after tax.
+4. **Cash per year.** Lease: salary - pre-tax lease payments and running costs - tax. Loan: salary - tax - repayments - running costs.
+5. **Cash purchase.** The price is taken from the account at the start, so the balance can begin below zero. Cash added per year equals take-home pay minus running costs, and tax is the same as with the loan. Interest the money could have earned is not counted.
 6. **Final balance.** Starting balance plus cash added over the term. For the lease, the balloon is paid from the account at the end.
-7. **Total cost of the car.** Balance with no car (starting balance plus take-home pay for every year) minus the final balance of the option.
+7. **Total cost of the car.** Balance with no car (starting balance plus take-home pay for every year) minus the final balance of the option. This includes the price, interest and running costs.
 
 ## Assumptions
 

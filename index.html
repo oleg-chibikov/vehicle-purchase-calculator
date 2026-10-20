@@ -101,7 +101,7 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
 <div class="wrap">
   <header>
     <h1>Vehicle Purchase Calculator</h1>
-    <p class="sub">Australia only. Compares three ways to pay for an electric car and shows how much money is in your account at the end of the term. Running costs (insurance, rego, servicing, charging) are not included. Defaults are examples, not a quote.</p>
+    <p class="sub">Australia only. Compares three ways to pay for an electric car and shows how much money is in your account at the end of the term. Running costs (rego, insurance, servicing, charging) are included in all three. Defaults are examples, not a quote.</p>
   </header>
 
   <div class="flag" id="flag" hidden></div>
@@ -116,6 +116,14 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
       <div class="field"><label for="start">Starting balance<small>Cash in the account today</small></label><input id="start" type="number" inputmode="decimal" step="1000" value="0"></div>
     </div>
 
+    <div class="common">
+      <div class="field"><label for="rego">Rego and CTP per year<small>No GST</small></label><input id="rego" type="number" inputmode="decimal" step="50" value="1000"></div>
+      <div class="field"><label for="insurance">Insurance per year<small>Including GST</small></label><input id="insurance" type="number" inputmode="decimal" step="50" value="1800"></div>
+      <div class="field"><label for="service">Servicing and tyres per year<small>Including GST</small></label><input id="service" type="number" inputmode="decimal" step="50" value="600"></div>
+      <div class="field"><label for="charging">Charging per year<small>About 15,000 km at $0.30 per kWh</small></label><input id="charging" type="number" inputmode="decimal" step="50" value="765"></div>
+      <div class="field"><label for="chargingInLease">Charging through the lease<small>Reimbursed pre-tax by the provider</small></label><input id="chargingInLease" type="checkbox" checked style="justify-self:end;width:auto"></div>
+    </div>
+
     <div class="cols">
       <div class="col lease">
         <h3>Novated lease</h3>
@@ -124,6 +132,7 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
         <div class="field"><label for="balloonPct">Balloon, %<small>ATO minimum for the term</small></label><input id="balloonPct" type="number" inputmode="decimal" step="0.01" value="28.13"></div>
         <div class="field"><label for="fee">Provider fees per year<small>Pre-tax</small></label><input id="fee" type="number" inputmode="decimal" step="10" value="0"></div>
         <div class="derived"><span>Monthly payment, pre-tax</span><b id="pLease"></b></div>
+        <div class="derived"><span>Running costs per year, via lease</span><b id="pRunLease"></b></div>
         <div class="derived"><span>Balloon at the end</span><b id="pBalloon"></b></div>
       </div>
       <div class="col loan">
@@ -131,6 +140,7 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
         <p class="desc">Repayments come out of pay after tax. Full price including GST is borrowed.</p>
         <div class="field"><label for="loanRate">Interest rate, % p.a.</label><input id="loanRate" type="number" inputmode="decimal" step="0.01" value="0.09"></div>
         <div class="derived"><span>Monthly repayment, after tax</span><b id="pLoan"></b></div>
+        <div class="derived"><span>Running costs per year, after tax</span><b id="pRunLoan"></b></div>
         <div class="derived"><span>Balloon at the end</span><b>none</b></div>
       </div>
       <div class="col cash">
@@ -138,6 +148,7 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
         <p class="desc">The full price leaves the account on day one. No repayments.</p>
         <div class="derived"><span>Paid on day one</span><b id="pCash"></b></div>
         <div class="derived"><span>Monthly payment</span><b>none</b></div>
+        <div class="derived"><span>Running costs per year, after tax</span><b id="pRunCash"></b></div>
       </div>
     </div>
   </section>
@@ -202,7 +213,10 @@ tr.head td { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06
       <li>Tax tiers for 2026-27: 0% to $18,200, 15% to $45,000, 30% to $135,000, 37% to $190,000, 45% above. Medicare levy 2% of taxable income.</li>
       <li>The electric car is exempt from fringe benefits tax, so the whole lease payment is pre-tax. This needs a car priced under the luxury car tax threshold for fuel-efficient vehicles (about $91,661 for 2026-27).</li>
       <li>The cash purchase starts the term with the price taken out of the account, so its balance can start below zero if the starting balance is smaller than the price. Interest the money could have earned is not counted.</li>
-      <li>Not included: running costs, super effects, the reportable fringe benefits amount, early termination fees, car resale value, road user charges.</li>
+      <li>Running costs through the lease are paid before tax. GST is recovered on insurance and servicing, so those cost one eleventh less. Rego and CTP carry no GST. With a loan or cash they are paid from take-home pay including GST.</li>
+      <li>Home charging is treated as reimbursed pre-tax with no GST saving. Untick the box if your provider does not cover it, and it is paid from take-home pay instead.</li>
+      <li>Running costs are flat per year with no inflation. They are the same car and the same use in all three cases.</li>
+      <li>Not included: super effects, the reportable fringe benefits amount, early termination fees, car resale value, road user charges.</li>
       <li>This is not tax or financial advice. Check real numbers with a lease quote and a tax professional.</li>
     </ul>
   </section>
@@ -248,19 +262,23 @@ function calc(i) {
   // Novated lease: GST-free price is financed, payments come out of pre-tax pay.
   var financed = i.price / (1 + GST);
   var leaseMonthly = pmt(i.leaseRate / 1200, n, financed, balloon);
-  var leasePretaxYear = leaseMonthly * 12 + i.fee;
+  // Running costs paid through the lease: GST is recovered on insurance and servicing.
+  var runningFull = i.rego + i.insurance + i.service + i.charging;
+  var leaseRunningPre = i.rego + (i.insurance + i.service) / (1 + GST) + (i.chargingInLease ? i.charging : 0);
+  var leaseRunningPost = i.chargingInLease ? 0 : i.charging;
+  var leasePretaxYear = leaseMonthly * 12 + i.fee + leaseRunningPre;
   var leaseTax = taxOn(i.salary - leasePretaxYear);
-  var leaseYearCash = i.salary - leasePretaxYear - leaseTax.total;
+  var leaseYearCash = i.salary - leasePretaxYear - leaseTax.total - leaseRunningPost;
 
   // Loan: full price financed, repayments come out of take-home pay.
   var loanMonthly = pmt(i.loanRate / 1200, n, i.price, 0);
   var loanTax = taxOn(i.salary);
   var loanTakeHome = i.salary - loanTax.total;
-  var loanYearCash = loanTakeHome - loanMonthly * 12;
+  var loanYearCash = loanTakeHome - loanMonthly * 12 - runningFull;
 
   // Cash purchase: full price leaves the account on day one, no repayments, same tax as the loan.
   var cashTax = loanTax;
-  var cashYearCash = loanTakeHome;
+  var cashYearCash = loanTakeHome - runningFull;
   var cashStart = i.start - i.price;
 
   var years = [], lb = i.start, kb = i.start, cb = cashStart;
@@ -285,15 +303,17 @@ function calc(i) {
     loanEnd: loanEnd, years: years, diff: leaseEnd - loanEnd,
     cashTax: cashTax, cashYearCash: cashYearCash, cashStart: cashStart, cashEnd: cashEnd,
     noCarEnd: noCarEnd, leaseCost: noCarEnd - leaseEnd, loanCost: noCarEnd - loanEnd, cashCost: noCarEnd - cashEnd,
-    leaseTotalPaid: leaseMonthly * n + i.fee * i.years + balloon,
-    loanTotalPaid: loanMonthly * n,
+    leaseTotalPaid: leaseMonthly * n + i.fee * i.years + balloon + (leaseRunningPre + leaseRunningPost) * i.years,
+    loanTotalPaid: loanMonthly * n + runningFull * i.years,
+    runningFull: runningFull, leaseRunningPre: leaseRunningPre, leaseRunningPost: leaseRunningPost,
+    leaseRunningYear: leaseRunningPre + leaseRunningPost,
     leaseTaxSavingYear: loanTax.total - leaseTax.total
   };
 }
 
 
 
-var ids = ['salary','price','years','leaseRate','balloonPct','fee','loanRate','start'];
+var ids = ['salary','price','years','leaseRate','balloonPct','fee','loanRate','start','rego','insurance','service','charging'];
 function $(id) { return document.getElementById(id); }
 function num(id) { var v = parseFloat($(id).value); return isFinite(v) ? v : 0; }
 function usd(x, cents) {
@@ -314,6 +334,7 @@ function readInputs() {
   var o = {};
   ids.forEach(function (id) { o[id] = num(id); });
   o.years = Math.max(1, Math.min(5, Math.round(o.years)));
+  o.chargingInLease = $('chargingInLease').checked;
   return o;
 }
 function render() {
@@ -324,6 +345,9 @@ function render() {
   $('pBalloon').textContent = usd(r.balloon, true);
   $('pLoan').textContent = usd(r.loanMonthly, true);
   $('pCash').textContent = usd(i.price, true);
+  $('pRunLease').textContent = usd(r.leaseRunningYear, true);
+  $('pRunLoan').textContent = usd(r.runningFull, true);
+  $('pRunCash').textContent = usd(r.runningFull, true);
 
   var ends = { Lease: r.leaseEnd, Loan: r.loanEnd, Cash: r.cashEnd };
   var best = Math.max(r.leaseEnd, r.loanEnd, r.cashEnd);
@@ -365,7 +389,7 @@ function render() {
   var w = '';
   w += head('Pay');
   w += row('Gross salary', usd(i.salary, true), usd(i.salary, true), usd(i.salary, true));
-  w += row('Lease payments and fees, pre-tax', '-' + usd(r.leasePretaxYear, true), '-', '-', 'sub');
+  w += row('Lease payments, fees and running costs, pre-tax', '-' + usd(r.leasePretaxYear, true), '-', '-', 'sub');
   w += row('Taxable income', usd(L.taxable, true), usd(N.taxable, true), usd(C.taxable, true), 'total');
   w += head('Income tax by tier, 2026-27');
   for (var k = 0; k < L.rows.length; k++) {
@@ -378,12 +402,14 @@ function render() {
   w += head('What is left');
   w += row('Take-home pay', usd(i.salary - r.leasePretaxYear - L.total, true), usd(r.loanTakeHome, true), usd(r.loanTakeHome, true));
   w += row('Loan repayments, after tax', '-', '-' + usd(r.loanMonthly * 12, true), '-', 'sub');
+  w += row('Running costs paid from take-home pay', r.leaseRunningPost > 0 ? '-' + usd(r.leaseRunningPost, true) : '-', '-' + usd(r.runningFull, true), '-' + usd(r.runningFull, true), 'sub');
   w += row('Cash added to the account per year', usd(r.leaseYearCash, true), usd(r.loanYearCash, true), usd(r.cashYearCash, true), 'total');
   w += head('Over the whole term');
   w += row('Paid up front', '-', '-', usd(i.price, true), 'sub');
   w += row('Balloon paid at the end', usd(r.balloon, true), '-', '-', 'sub');
   w += row('Tax saved per year compared with the loan', usd(r.leaseTaxSavingYear, true), '-', '-', 'sub');
-  w += row('Total paid for the car', usd(r.leaseTotalPaid, true), usd(r.loanTotalPaid, true), usd(i.price, true), 'total');
+  w += row('Running costs over the term', usd(r.leaseRunningYear * i.years, true), usd(r.runningFull * i.years, true), usd(r.runningFull * i.years, true), 'sub');
+  w += row('Total paid for the car and running it, before tax savings', usd(r.leaseTotalPaid, true), usd(r.loanTotalPaid, true), usd(i.price + r.runningFull * i.years, true), 'total');
   $('work').innerHTML = w;
 
   var b = row('Start', usd(i.start), usd(i.start), usd(r.cashStart), 'sub');
@@ -409,6 +435,7 @@ function render() {
 }
 
 ids.forEach(function (id) { $(id).addEventListener('input', render); });
+$('chargingInLease').addEventListener('change', render);
 $('years').addEventListener('change', function () {
   $('balloonPct').value = RESIDUAL[parseInt($('years').value, 10)];
   render();
