@@ -17,6 +17,7 @@ function render() {
   $('dutyLabel').innerHTML = 'Stamp duty in ' + i.state + info(DUTY[i.state].src);
   $('fbtSrc').innerHTML = info(r.fbt.src);
 
+  $('mortgageField').hidden = savings;
   var costs = { Lease: r.leaseCost, Loan: r.loanCost, Cash: r.cashCost };
   var cheapest = Math.min(r.leaseCost, r.loanCost, r.cashCost);
   Object.keys(costs).forEach(function (k) {
@@ -25,10 +26,13 @@ function render() {
     $('d' + k).textContent = best ? 'Lowest cost' : '+' + usd(costs[k] - cheapest) + ' more than the lowest';
     $('d' + k).classList.toggle('best', best);
     $('s' + k).innerHTML = splitRows(i, r, k.toLowerCase(), costs[k]);
+    $('e' + k).innerHTML = endRow(i, r, k.toLowerCase());
   });
   $('costNote').innerHTML = lines([
     ['Cost = the account with no car (' + usd(r.noCar.end) + ' at the end) minus the account with the car. You own the car in all three cases. Its resale value is not counted.'],
-    ['The account earns ' + i.accountRate + '% a year, ' + (savings ? 'taxed as savings interest.' : 'tax free as a mortgage offset.'), ['assumeRates']],
+    ['The account holds the cash today and the money the car takes out or gives back. Salary and living costs are the same in every option, so they stay out.'],
+    [savings ? 'The account earns ' + i.accountRate + '% a year, taxed as savings interest.'
+      : 'The offset saves ' + i.accountRate + '% a year, tax free, on the balance up to the mortgage owing of ' + usd(Math.max(i.mortgage, 0)) + '. Cash above that saves no interest. A balance below zero adds to the mortgage at the same rate.', ['assumeRates']],
     fbtLines[0]
   ]);
 
@@ -81,8 +85,19 @@ function splitRows(i, r, k, cost) {
     if (v) out += splitRow(how[key][0], v, how[key][1], how[key][2]);
   });
   // The rest is what the account would have earned on the money spent, after any tax on that interest.
-  if (rest) out += splitRow('Interest the account missed', rest, 'Total ' + usd(total) + ' minus the lines above = ' + usd(rest) + ', in whole dollars. The money spent on the car would have earned ' + i.accountRate + '% a year' + (i.account === 'savings' ? ', less tax on that interest.' : ' in the offset.'), ['assumeRates']);
+  if (rest) out += splitRow('Interest the account missed', rest, 'Total ' + usd(total) + ' minus the lines above = ' + usd(rest) + ', in whole dollars. The money spent on the car would have earned ' + i.accountRate + '% a year' + (i.account === 'savings' ? ', less tax on that interest.' : ' in the offset, on the part of the balance up to the mortgage owing.'), ['assumeRates']);
   return out;
+}
+
+// The account at the end of the term, with the sum that gets there in the tooltip.
+function endRow(i, r, k) {
+  var s = r[k], y = i.years;
+  var start = k === 'cash' ? 'cash today ' + usd(i.start, true) + ' - price and stamp duty ' + usd(r.upfront, true) : 'cash today ' + usd(i.start, true);
+  var f = start + ' + car money ' + usd(r.flow[k], true) + ' a year x ' + y + (y === 1 ? ' year' : ' years')
+    + (i.account === 'savings' ? ' + interest ' : ' + mortgage interest saved ') + usd(s.interest, true) + (s.interestTax ? ' - tax on it ' + usd(s.interestTax, true) : '')
+    + (k === 'lease' ? ' - balloon ' + usd(r.balloon, true) : '') + ' = ' + usd(s.end, true)
+    + '. With no car the account ends at ' + usd(r.noCar.end, true) + '.';
+  return '<span>Account after ' + y + (y === 1 ? ' year' : ' years') + info('assumeRates', f) + '</span><b>' + usd(s.end) + '</b>';
 }
 function splitRow(label, v, formula, src) {
   return '<dt>' + esc(label) + info(src, formula) + '</dt><dd>' + (v > 0 ? '+' : '') + usd(v) + '</dd>';
@@ -112,7 +127,8 @@ function workRows(i, r) {
   w += row('Loan repayments, after tax', '-', '-' + usd(r.loanMonthly * 12), '-', 'sub');
   if (r.ecm > 0) w += row('Post-tax contribution to the lease, with GST' + info(['statutory', 'ecmGst']), '-' + usd(r.ecm), '-', '-', 'sub');
   w += row('Running costs paid from take-home pay', r.leaseRunningPost > 0 ? '-' + usd(r.leaseRunningPost) : '-', '-' + usd(r.runningFull), '-' + usd(r.runningFull), 'sub');
-  w += row('Cash added to the account per year, before interest', usd(r.leaseYearCash), usd(r.loanYearCash), usd(r.cashYearCash), 'total');
+  w += row('Take-home pay left after the car', usd(r.leaseYearCash), usd(r.loanYearCash), usd(r.cashYearCash), 'total');
+  w += row('Change to the account per year, before interest, compared with no car', usd(r.flow.lease), usd(r.flow.loan), usd(r.flow.cash), 'sub');
   w += head('Over the whole term');
   w += row('Paid up front, price and stamp duty', '-', '-', usd(r.upfront), 'sub');
   w += row('Balloon paid at the end, with GST' + info(['residual', 'gst']), usd(r.balloon), '-', '-', 'sub');

@@ -43,9 +43,10 @@
       <details class="more">
         <summary>The account the money comes from</summary>
         <div class="common">
-          <div class="field"><label for="start">Starting balance<small>Cash in the account today</small></label><input id="start" type="number" inputmode="decimal" step="1000" value="0"></div>
+          <div class="field"><label for="start">Cash in the account today<small>Offset or savings balance</small></label><input id="start" type="number" inputmode="decimal" step="1000" value="0"></div>
           <div class="field"><label for="account">Account type</label>
             <select id="account"><option value="offset" selected>Mortgage offset</option><option value="savings">Savings</option></select></div>
+          <div class="field" id="mortgageField"><label for="mortgage">Mortgage owing<small>The offset saves interest up to this amount</small></label><input id="mortgage" type="number" inputmode="decimal" step="10000" value="500000"></div>
           <div class="field"><label for="accountRate">Account interest, % p.a.<span data-src="assumeRates"></span><small>Mortgage rate for an offset</small></label><input id="accountRate" type="number" inputmode="decimal" step="0.05" value="6"></div>
         </div>
       </details>
@@ -60,6 +61,7 @@
         <p class="desc">Paid from salary before tax. Balloon at the end.</p>
         <div class="big" id="cLease"></div><div class="lbl" id="dLease"></div>
         <dl class="split" id="sLease"></dl>
+        <div class="derived end" id="eLease"></div>
         <div class="derived"><span>Monthly payment, before tax</span><b id="pLease"></b></div>
         <div class="derived"><span>Fringe benefits tax<span id="fbtSrc"></span></span><b id="pFbt"></b></div>
         <details class="more">
@@ -88,6 +90,7 @@
         <p class="desc">Price and stamp duty borrowed, repaid from take-home pay.</p>
         <div class="big" id="cLoan"></div><div class="lbl" id="dLoan"></div>
         <dl class="split" id="sLoan"></dl>
+        <div class="derived end" id="eLoan"></div>
         <div class="derived"><span>Monthly repayment, after tax</span><b id="pLoan"></b></div>
         <details class="more">
           <summary>Loan settings</summary>
@@ -101,6 +104,7 @@
         <p class="desc">Price and stamp duty leave the account on day one.</p>
         <div class="big" id="cCash"></div><div class="lbl" id="dCash"></div>
         <dl class="split" id="sCash"></dl>
+        <div class="derived end" id="eCash"></div>
       </div>
     </div>
     <div class="lbl note" id="costNote"></div>
@@ -126,7 +130,9 @@
     <ul class="notes">
       <li>Australian tax resident, no HELP debt, no other income. Salary and running costs stay flat for the whole term.</li>
       <li>Salary, payments and running costs are paid at the end of each month. Some lease providers charge in advance, which makes the payment slightly lower.</li>
-      <li>The account earns interest every month. Offset interest is tax free. Savings interest is taxed at the end of each year. A balance below zero costs the same rate with no tax deduction.<span data-src="assumeRates"></span></li>
+      <li>The account holds the cash today and the money the car takes out or gives back. Salary and living costs are the same in every option, so they stay out of it.</li>
+      <li>The account earns interest every month. Offset interest is tax free and only counts on the balance up to the mortgage owing. Savings interest is taxed at the end of each year. A balance below zero costs the same rate with no tax deduction.<span data-src="assumeRates"></span></li>
+      <li>The mortgage owing stays the same for the whole term. In real life repayments lower it, so a large offset balance can pass it sooner.</li>
       <li>Left out: super, early termination fees, car resale value, road user charges, stamp duty inside insurance premiums and the base value drop after 4 years.<span data-src="oneThird"></span></li>
       <li>This is not tax or financial advice. Check real numbers with a lease quote and a tax professional.</li>
     </ul>

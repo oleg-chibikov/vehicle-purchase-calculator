@@ -59,9 +59,11 @@ Costs are flat per year with no inflation. Rego and CTP for the first year are c
 
 ## Interest on the account
 
+The account holds the cash you have today and the money the car takes out or gives back. Salary and living costs are the same in every option, so they stay out. Under each total the page shows the account at the end of the term.
+
 The balance earns interest every month at the account rate (default 6%), in all three options and in the no-car baseline. Pick where the money sits:
 
-- **Mortgage offset.** The interest saved is tax free. A balance below zero means a bigger mortgage at the same rate.
+- **Mortgage offset.** The interest saved is tax free. It only counts on the balance up to the mortgage owing (default $500,000). Cash above that saves no interest. A balance below zero means a bigger mortgage at the same rate. The mortgage owing stays flat for the term.
 - **Savings.** The interest is added to taxable income and taxed by tier at the end of each year. A balance below zero costs the same rate with no tax deduction.
 
 This makes the comparison fair: the loan pays interest, and the cash purchase loses the interest the money would have earned.
@@ -129,7 +131,7 @@ These are the inputs a novated lease quote is built from:
 
 The monthly payment is not an input. It is calculated from the rate, term and balloon. If a provider gives you a monthly payment instead, adjust the interest rate until the payment on the page matches.
 
-Other inputs, folded next to the part of the page they change: gross salary (excluding super), a loan interest rate for the comparison (default 9%, an estimate, not market data), a starting account balance, the account type and its interest rate, the four yearly running costs, and a checkbox that models the lease without the FBT exemption.
+Other inputs, folded next to the part of the page they change: gross salary (excluding super), a loan interest rate for the comparison (default 9%, an estimate, not market data), the cash in the account today, the account type, the mortgage owing for an offset, the account interest rate, the four yearly running costs, and a checkbox that models the lease without the FBT exemption.
 
 ## Tax used: 2026-27 resident rates
 
@@ -150,9 +152,9 @@ Source: [ATO individual income tax rates](https://www.ato.gov.au/tax-rates-and-c
 1. **Lease payment.** The employer claims the GST on the price back, up to $6,353 (one eleventh of the 2026-27 [car limit](https://www.ato.gov.au/businesses-and-organisations/small-business-newsroom/car-thresholds-from-1-july) of $69,883). Financed = price - GST credit + stamp duty. The ATO residual is a share of the financed amount without GST: residual = financed x balloon %. Payment = (financed - residual / (1 + r)^n) x r / (1 - (1 + r)^-n), with r the monthly rate and n the number of months, paid at the end of each month. At the end you pay the residual plus GST.
 2. **Lease tax.** The lease payments, fees and running costs come out of salary before tax. Without the FBT exemption, the post-tax contribution comes out of take-home pay instead, and the pre-tax part drops by ten elevenths of it. Taxable income = salary - the pre-tax part. Tax is calculated tier by tier, plus Medicare.
 3. **Loan.** The loan borrows the price with GST plus stamp duty. Repayments and running costs come out of take-home pay after tax.
-4. **Cash per year.** Lease: salary - pre-tax part - tax - post-tax contribution. Loan: salary - tax - repayments - running costs.
-5. **Cash purchase.** The price and stamp duty are taken from the account at the start, so the balance can begin below zero. Cash added per year equals take-home pay minus running costs, and tax on salary is the same as with the loan.
-6. **Final balance.** Each month the account earns interest on its balance, then gets one twelfth of the yearly cash. Savings interest is taxed at the end of each year. For the lease, the balloon with GST is paid from the account at the end.
+4. **Car money per year.** Take-home pay left after the car, minus take-home pay with no car. Lease: salary - pre-tax part - tax - post-tax contribution. Loan: salary - tax - repayments - running costs.
+5. **Cash purchase.** The price and stamp duty are taken from the account at the start, so the balance can begin below zero. Car money per year is minus the running costs, and tax on salary is the same as with the loan.
+6. **Final balance.** Each month the account earns interest on its balance, then gets one twelfth of the yearly car money. An offset earns only on the balance up to the mortgage owing. Savings interest is taxed at the end of each year. For the lease, the balloon with GST is paid from the account at the end.
 7. **Total cost of the car.** Balance with no car (same salary, same account, same interest) minus the final balance of the option. This includes the price, stamp duty, loan interest, lost account interest and running costs.
 
 ## Assumptions

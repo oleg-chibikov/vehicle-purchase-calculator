@@ -28,17 +28,18 @@ function sumTax(list) {
   return s;
 }
 
-// Month by month: interest on the opening balance, then the month's cash flow.
+// Month by month: interest on the opening balance, then the month's car money in or out.
 // Savings interest is taxed at the end of each year. Offset interest is tax free.
 // A negative balance costs the same rate and gives no tax deduction.
 function simulate(i, startBalance, yearCash, salaryTaxable, endPayment) {
-  var monthlyRate = i.accountRate / 1200;
+  var monthlyRate = i.accountRate / 1200, offset = i.account !== 'savings', owing = Math.max(i.mortgage, 0);
   var bal = startBalance, years = [], taxes = [], interestTotal = 0, interestTaxTotal = 0;
   var salaryTax = taxOn(salaryTaxable);
   for (var y = 1; y <= i.years; y++) {
     var interestYear = 0, taxableInterest = 0;
     for (var m = 0; m < 12; m++) {
-      var interest = bal * monthlyRate;
+      // An offset saves interest only on the part of the balance up to the mortgage owing. Below zero the mortgage grows.
+      var interest = (offset ? Math.min(bal, owing) : bal) * monthlyRate;
       bal += interest + yearCash / 12;
       interestYear += interest;
       if (interest > 0) taxableInterest += interest;
@@ -106,11 +107,13 @@ function calc(i) {
   var cashYearCash = takeHome - runningFull;
   var cashStart = i.start - upfront;
 
-  var lease = simulate(i, i.start, leaseYearCash, leaseTaxable, balloon);
-  var loan = simulate(i, i.start, loanYearCash, i.salary, 0);
-  var cash = simulate(i, cashStart, cashYearCash, i.salary, 0);
+  // The account holds the cash today and what the car changes. Take-home pay with no car is the same in every option, so it stays out.
+  var flow = { lease: leaseYearCash - takeHome, loan: loanYearCash - takeHome, cash: cashYearCash - takeHome };
+  var lease = simulate(i, i.start, flow.lease, leaseTaxable, balloon);
+  var loan = simulate(i, i.start, flow.loan, i.salary, 0);
+  var cash = simulate(i, cashStart, flow.cash, i.salary, 0);
   // Baseline: same salary, same tax, same account, no car at all.
-  var noCar = simulate(i, i.start, takeHome, i.salary, 0);
+  var noCar = simulate(i, i.start, 0, i.salary, 0);
 
   // What each option spends over the term, by kind. The rest of the cost is interest the account did not earn.
   var running = runningFull * i.years;
@@ -127,7 +130,7 @@ function calc(i) {
     n: n, duty: duty, upfront: upfront, gstCredit: gstCredit, financed: financed, residual: residual, balloon: balloon,
     leaseMonthly: leaseMonthly, leasePretaxYear: leasePretaxYear, leaseTax: leaseTax, leaseYearCash: leaseYearCash,
     loanMonthly: loanMonthly, salaryTax: salaryTax, takeHome: takeHome, loanYearCash: loanYearCash,
-    cashYearCash: cashYearCash, cashStart: cashStart,
+    cashYearCash: cashYearCash, cashStart: cashStart, flow: flow,
     lease: lease, loan: loan, cash: cash, noCar: noCar,
     leaseCost: noCar.end - lease.end, loanCost: noCar.end - loan.end, cashCost: noCar.end - cash.end,
     leaseTotalPaid: leaseMonthly * n + i.fee * i.years + balloon + (leaseRunningPre + leaseRunningPost + ecmGst + fbtTax) * i.years,
